@@ -1,0 +1,59 @@
+@model IdentityInfo
+<div class="card bg-light">
+    <div class="card-header">
+        <h4 class="card-title">
+            <a data-toggle="collapse" href="#application-panel-@Model.Application.GetHashCode()">@Model.Application</a>
+        </h4>
+    </div>
+    <div id="application-panel-@Model.Application.GetHashCode()" class="collapse in">
+        <div class="card-body">
+            <h4>Identity</h4>
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr><td>Source</td><td>@Model.Source</td></tr>
+                    <tr><td>Is Authenticated</td><td>@Model.IsAuthenticated.ToString().ToLowerInvariant()</td></tr>
+                    <tr><td>Name</td><td>@Model.Name</td></tr>
+                    <tr><td>Authentication Type</td><td>@Model.AuthenticationType</td></tr>
+                </tbody>
+            </table>
+            <h4>Claims</h4>
+            <table class="table table-bordered table-striped table-responsive">
+                <thead>
+                    <tr>
+                        <th>Claim Type</th>
+                        <th>Claim Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var claim in Model.Claims)
+                        {
+                        <tr>
+                            <td>@claim.Key</td>
+                            <td>@claim.Value</td>
+                        </tr>
+                        }
+                </tbody>
+            </table>
+            @if (Model.RelatedApplicationIdentities != null && Model.RelatedApplicationIdentities.Any())
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">
+                            <a data-toggle="collapse" href="#related-panel-@Model.Application.GetHashCode()">
+                                Related Application Identities
+                            </a>
+                        </h4>
+                    </div>
+                    <div id="related-panel-@Model.Application.GetHashCode()" class="collapse in">
+                        <div class="card-body">
+                            @foreach (var relatedApplicationIdentity in Model.RelatedApplicationIdentities)
+                            {
+                                Html.RenderPartial("_IdentityInfoPartial", relatedApplicationIdentity);
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
