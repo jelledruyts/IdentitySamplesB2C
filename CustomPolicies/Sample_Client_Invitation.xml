@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TrustFrameworkPolicy
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06"
+  PolicySchemaVersion="0.3.0.0"
+  TenantId="identitysamplesb2c.onmicrosoft.com"
+  PolicyId="B2C_1A_Sample_Client_Invitation"
+  PublicPolicyUri="http://identitysamplesb2c.onmicrosoft.com/B2C_1A_Sample_Client_Invitation"
+  DeploymentMode="Development"
+  UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights">
+
+  <BasePolicy>
+    <TenantId>identitysamplesb2c.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_TrustFrameworkExtensions</PolicyId>
+  </BasePolicy>
+
+  <!-- The following policy is used for registering a local via an invitation link. -->
+  <RelyingParty>
+    <DefaultUserJourney ReferenceId="Invitation" />
+    <UserJourneyBehaviors>
+      <JourneyInsights TelemetryEngine="ApplicationInsights" InstrumentationKey="c35111c3-32e3-4736-b9fe-585ce1ff8aae" DeveloperMode="true" ClientEnabled="false" ServerEnabled="true" TelemetryVersion="1.0.0" />
+    </UserJourneyBehaviors>
+    <TechnicalProfile Id="Invitation">
+      <DisplayName>Invitation</DisplayName>
+      <Protocol Name="OpenIdConnect" />
+      <!-- Accept incoming claims from the client_assertion JWT token that is passed as a query parameter to this policy. -->
+      <InputTokenFormat>JWT</InputTokenFormat>
+      <CryptographicKeys>
+        <!-- The client_assertion JWT token is signed with the client secret of the sample client application and the signature must be validated with the same secret. -->
+        <Key Id="client_secret" StorageReferenceId="B2C_1A_SampleClientSecret" />
+      </CryptographicKeys>
+      <InputClaims>
+        <InputClaim ClaimTypeReferenceId="extension_VerifiedEmail" />
+      </InputClaims>
+      <OutputClaims>
+        <OutputClaim ClaimTypeReferenceId="displayName" />
+        <OutputClaim ClaimTypeReferenceId="email" />
+        <OutputClaim ClaimTypeReferenceId="objectId" PartnerClaimType="sub"/>
+        <OutputClaim ClaimTypeReferenceId="tenantId" AlwaysUseDefaultValue="true" DefaultValue="{Policy:TenantObjectId}" />
+      </OutputClaims>
+      <SubjectNamingInfo ClaimType="sub" />
+    </TechnicalProfile>
+  </RelyingParty>
+</TrustFrameworkPolicy>

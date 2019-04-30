@@ -1,27 +1,40 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Threading.Tasks;
-using Sample.Client.AspNetCore22.Models;
-using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.AzureADB2C.UI;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using Sample.Client.AspNetCore22.Models;
 
 namespace Sample.Client.AspNetCore22.Controllers
 {
     public class AccountController : Controller
     {
         private readonly IHttpClientFactory httpClientFactory;
+        private readonly string signingSecret;
+        private readonly string invitationPolicyId;
 
-        public AccountController(IHttpClientFactory httpClientFactory)
+        public AccountController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             this.httpClientFactory = httpClientFactory;
+            this.signingSecret = configuration["AzureAdB2C:ClientSecret"];
+            this.invitationPolicyId = configuration["AzureAdB2C:InvitationPolicyId"];
         }
 
-        [Route("Account")]
-        public async Task<IActionResult> Index()
+        [Route("[controller]/[action]")]
+        public async Task<IActionResult> Identity()
         {
             var relatedApplicationIdentities = new List<IdentityInfo>();
             try
@@ -65,6 +78,81 @@ namespace Sample.Client.AspNetCore22.Controllers
                 RelatedApplicationIdentities = relatedApplicationIdentities
             };
             return View(identityInfo);
+        }
+
+        [Route("[controller]/[action]")]
+        public IActionResult Invite()
+        {
+            return View();
+        }
+
+        [Route("[controller]/[action]")]
+        [HttpPost]
+        public IActionResult Invite(string email, int validDays = 30)
+        {
+            if (!string.IsNullOrEmpty(email))
+            {
+                // Generate an invitation link for the requested email address by generating a self-issued token and sending that to the "Register" action.
+                var expiration = TimeSpan.FromDays(validDays); // Defines how long the invitation is valid.
+                var claims = new[]
+                {
+                    new Claim("verified_email", email) // This claim maps to the extension attribute registered in AAD B2C which is used in the custom invitation policy.
+                };
+                var selfIssuedToken = CreateSelfIssuedToken(expiration, claims, this.signingSecret);
+
+                var authenticationRequestUrl = Url.Action("Register", "Account", new { client_assertion = selfIssuedToken }, "https" /* This forces an absolute URL */);
+                this.ViewData["Email"] = email;
+                this.ViewData["AuthenticationRequestUrl"] = authenticationRequestUrl;
+                return View();
+            }
+            return RedirectToAction("Invite");
+        }
+
+        [Route("[controller]/[action]")]
+        public async Task<IActionResult> Register(string client_assertion)
+        {
+            if (string.IsNullOrWhiteSpace(client_assertion))
+            {
+                return BadRequest();
+            }
+            // Tell the AAD B2C middleware to invoke a specific policy and pass the client assertion through.
+            var authenticationProperties = new AuthenticationProperties();
+            authenticationProperties.RedirectUri = Url.Action("Registered", "Account");
+            // NOTE: this resets the scope and response type so no authorization code is requested from this flow,
+            // see https://github.com/aspnet/AspNetCore/blob/release/2.2/src/Azure/AzureAD/Authentication.AzureADB2C.UI/src/AzureAdB2COpenIDConnectEventHandlers.cs#L35-L36.
+            authenticationProperties.Items[AzureADB2CDefaults.PolicyKey] = this.invitationPolicyId;
+            authenticationProperties.Items[OpenIdConnectParameterNames.ClientAssertion] = client_assertion;
+            await HttpContext.ChallengeAsync(AzureADB2CDefaults.AuthenticationScheme, authenticationProperties);
+            return new EmptyResult();
+        }
+
+        [Authorize]
+        [Route("[controller]/[action]")]
+        public IActionResult Registered()
+        {
+            return View();
+        }
+
+        internal static string CreateSelfIssuedToken(TimeSpan expiration, ICollection<Claim> claims, string signingSecret)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var nowUtc = DateTime.UtcNow;
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingSecret));
+            var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Audience = "my-audience", // Not important as we are self-issuing the token.
+                Expires = nowUtc.Add(expiration),
+                IssuedAt = nowUtc,
+                Issuer = "https://my-issuer", // Not important as we are self-issuing the token.
+                NotBefore = nowUtc,
+                SigningCredentials = signingCredentials,
+                Subject = new ClaimsIdentity(claims)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }

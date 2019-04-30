@@ -64,22 +64,55 @@ namespace Sample.Client.AspNetCore22
                 options.Scope.Add(Configuration["AzureAdB2C:ScopeRead"]); // Request an "access_token" for another API.
 
                 // Handle events.
+                var onMessageReceived = options.Events.OnMessageReceived;
+                options.Events.OnMessageReceived = context =>
+                {
+                    if (onMessageReceived != null)
+                    {
+                        onMessageReceived(context);
+                    }
+                    // NOTE: You can inspect every message that comes in from the identity provider here.
+                    return Task.CompletedTask;
+                };
+
+                var onRedirectToIdentityProvider = options.Events.OnRedirectToIdentityProvider;
                 options.Events.OnRedirectToIdentityProvider = context =>
                 {
+                    if (onRedirectToIdentityProvider != null)
+                    {
+                        onRedirectToIdentityProvider(context);
+                    }
+                    if (context.Properties.Items.TryGetValue(OpenIdConnectParameterNames.ClientAssertion, out var clientAssertion) && !string.IsNullOrWhiteSpace(clientAssertion))
+                    {
+                        // If a client assertion is requested, pass it along to the identity provider as a JWT bearer assertion.
+                        context.ProtocolMessage.ClientAssertion = clientAssertion;
+                        context.ProtocolMessage.ClientAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
+                        context.Properties.Items.Remove(OpenIdConnectParameterNames.ClientAssertion);
+                    }
                     // NOTE: You can optionally take action before being redirected to the identity provider here.
                     return Task.CompletedTask;
                 };
 
+                var onAuthorizationCodeReceived = options.Events.OnAuthorizationCodeReceived;
                 options.Events.OnAuthorizationCodeReceived = context =>
                 {
+                    if (onAuthorizationCodeReceived != null)
+                    {
+                        onAuthorizationCodeReceived(context);
+                    }
                     // NOTE: As mentioned above, setting the scope here doesn't work, the access_token doesn't get
                     // returned unless the scope was requested during sign in.
                     // context.TokenEndpointRequest.Scope = options.ClientId + " offline_access";
                     return Task.CompletedTask;
                 };
 
+                var onTokenResponseReceived = options.Events.OnTokenResponseReceived;
                 options.Events.OnTokenResponseReceived = context =>
                 {
+                    if (onTokenResponseReceived != null)
+                    {
+                        onTokenResponseReceived(context);
+                    }
                     // Normally, the access and refresh tokens that resulted from the authorization code flow would be
                     // stored in a cache like ADAL/MSAL's user cache.
                     // To simplify here, we're adding them as extra claims in the user's claims identity
