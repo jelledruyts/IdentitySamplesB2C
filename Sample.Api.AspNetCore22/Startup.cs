@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,9 +18,6 @@ namespace Sample.Api.AspNetCore22
 {
     public class Startup
     {
-        public static string ScopeRead;
-        public static string ScopeWrite;
-
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -29,8 +27,9 @@ namespace Sample.Api.AspNetCore22
 
         public void ConfigureServices(IServiceCollection services)
         {
-            ScopeRead = Configuration["AzureAdB2C:ScopeRead"];
-            ScopeWrite = Configuration["AzureAdB2C:ScopeWrite"];
+            // Read the API's published scope names from configuration.
+            Constants.Scopes.IdentityRead = Configuration["AzureAdB2C:Scopes:IdentityRead"];
+            Constants.Scopes.IdentityReadWrite = Configuration["AzureAdB2C:Scopes:IdentityReadWrite"];
 
             // Don't map any standard OpenID Connect claims to Microsoft-specific claims.
             // See https://leastprivilege.com/2017/11/15/missing-claims-in-the-asp-net-core-2-openid-connect-handler/
@@ -57,7 +56,34 @@ namespace Sample.Api.AspNetCore22
                     };
                 });
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(Constants.AuthorizationPolicies.Baseline, b =>
+                {
+                    // An authenticated user (i.e. an incoming JWT bearer token) is always required.
+                    b.RequireAuthenticatedUser();
+                    // A "scope" claim is also required, if not any application could simply request
+                    // a valid access token to call into this API without being authorized.
+                    b.RequireClaim(Constants.ClaimTypes.Scope);
+                });
+                options.AddPolicy(Constants.AuthorizationPolicies.ReadIdentity, b =>
+                {
+                    b.RequireAssertion(context =>
+                    {
+                        // The scopes are emitted in a single claim, separated by a space.
+                        var scopeClaims = context.User.Claims.Where(c => c.Type == Constants.ClaimTypes.Scope).SelectMany(c => c.Value.Split(' '));
+                        return scopeClaims.Any(c => c == Constants.Scopes.IdentityRead);
+                    });
+                });
+            });
+
+            services.AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                .AddMvcOptions(options =>
+                {
+                    // Enforce the "baseline" policy at the minimum for all requests.
+                    options.Filters.Add(new AuthorizeFilter(Constants.AuthorizationPolicies.Baseline));
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

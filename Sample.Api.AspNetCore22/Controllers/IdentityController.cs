@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sample.Api.AspNetCore22.Models;
 
 namespace Sample.Api.AspNetCore22.Controllers
 {
-    [Authorize]
+    [Authorize(Constants.AuthorizationPolicies.ReadIdentity)]
     [Route("api/[controller]")]
     [ApiController]
     public class IdentityController : ControllerBase

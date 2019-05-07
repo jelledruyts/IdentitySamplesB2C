@@ -41,7 +41,7 @@ namespace Sample.Client.AspNetCore22
             });
 
             // Don't map any standard OpenID Connect claims to Microsoft-specific claims.
-            // See https://leastprivilege.com/2017/11/15/missing-claims-in-the-asp-net-core-2-openid-connect-handler/
+            // See https://leastprivilege.com/2017/11/15/missing-claims-in-the-asp-net-core-2-openid-connect-handler/.
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
             // Add AAD B2C authentication using OpenID Connect.
@@ -57,11 +57,17 @@ namespace Sample.Client.AspNetCore22
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken; // Trigger a hybrid OIDC + auth code flow.
                 // NOTE: The scopes must be set here so they are requested from the beginning, requesting these during the auth code redemption doesn't work.
                 options.Scope.Add("offline_access"); // Request a "refresh_token" as part of the auth code flow.
-                // options.Scope.Add(options.ClientId); // Request an "access_token" for the API represented by the same application as part of the auth code flow.
-                // NOTE: You cannot request both the <Client ID> scope and a scope of an external API as this would have to result
-                // in an access token for multiple audiences which isn't possible.
-                // See https://docs.microsoft.com/en-us/azure/active-directory-b2c/active-directory-b2c-access-tokens#requesting-a-token
-                options.Scope.Add(Configuration["AzureAdB2C:ScopeRead"]); // Request an "access_token" for another API.
+                // OPTION 1: Request an "access_token" for the API represented by the same application as part of the auth code flow.
+                // This is done (by convention) by requesting the application's Client ID as the scope.
+                // See https://docs.microsoft.com/en-us/azure/active-directory-b2c/active-directory-b2c-reference-oidc#get-a-token.
+                // options.Scope.Add(options.ClientId);
+                // OPTION 2: Request an "access_token" for another API.
+                options.Scope.Add(Configuration["AzureAdB2C:ScopeUserImpersonation"]); // Request that this app can act on behalf of the user (delegated permission).
+                options.Scope.Add(Configuration["AzureAdB2C:ScopeRead"]); // Request that this app can perform a "read" on behalf of the user (delegated permission).
+                options.Scope.Add(Configuration["AzureAdB2C:ScopeWrite"]); // Request that this app can perform a "write" on behalf of the user (delegated permission).
+                // NOTE: You cannot request both option 1 (the Client ID scope) and option 2 (a scope of an external API)
+                // at the same time as this would have to result in an access token for multiple audiences which isn't possible.
+                // See https://docs.microsoft.com/en-us/azure/active-directory-b2c/active-directory-b2c-access-tokens#requesting-a-token.
 
                 // Handle events.
                 var onMessageReceived = options.Events.OnMessageReceived;
@@ -82,6 +88,7 @@ namespace Sample.Client.AspNetCore22
                     {
                         onRedirectToIdentityProvider(context);
                     }
+                    // NOTE: You can optionally take action before being redirected to the identity provider here.
                     if (context.Properties.Items.TryGetValue(OpenIdConnectParameterNames.ClientAssertion, out var clientAssertion) && !string.IsNullOrWhiteSpace(clientAssertion))
                     {
                         // If a client assertion is requested, pass it along to the identity provider as a JWT bearer assertion.
@@ -89,7 +96,6 @@ namespace Sample.Client.AspNetCore22
                         context.ProtocolMessage.ClientAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
                         context.Properties.Items.Remove(OpenIdConnectParameterNames.ClientAssertion);
                     }
-                    // NOTE: You can optionally take action before being redirected to the identity provider here.
                     return Task.CompletedTask;
                 };
 
@@ -102,6 +108,7 @@ namespace Sample.Client.AspNetCore22
                     }
                     // NOTE: As mentioned above, setting the scope here doesn't work, the access_token doesn't get
                     // returned unless the scope was requested during sign in.
+                    // For example, the following won't work unless the scope was already requested during sign in:
                     // context.TokenEndpointRequest.Scope = options.ClientId + " offline_access";
                     return Task.CompletedTask;
                 };
