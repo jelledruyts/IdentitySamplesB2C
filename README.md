@@ -21,7 +21,7 @@ The following scenarios are showcased:
 
 - [Web App Sign-In (ASP.NET Core)](#web-app-sign-in-aspnet-core)
 - [Web App calling Web API](#web-app-calling-web-api)
-- [Web App Sign-In + Web API (JavaScript)](#web-app-sign-in--web-api--javascript)
+- [Web App Sign-In + Web API (JavaScript)](#web-app-sign-in--web-api-javascript)
 - [User invitation using custom policy](#user-invitation-using-custom-policy)
 
 ### Web App Sign-In (ASP.NET Core)
