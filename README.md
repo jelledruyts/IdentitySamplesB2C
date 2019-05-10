@@ -17,7 +17,14 @@ The solution consists of the following parts:
 
 ## Scenarios
 
-### Web App Sign-In
+The following scenarios are showcased:
+
+- [Web App Sign-In (ASP.NET Core)](#web-app-sign-in--aspnet-core-)
+- [Web App calling Web API](#web-app-calling-web-api)
+- [Web App Sign-In + Web API (JavaScript)](#web-app-sign-in---web-api--javascript-)
+- [User invitation using custom policy](#user-invitation-using-custom-policy)
+
+### Web App Sign-In (ASP.NET Core)
 
 This scenario allows users to sign in to an ASP.NET web application using a "user flow" (policy) in Azure AD B2C.
 
@@ -48,7 +55,7 @@ To set this up locally, ensure you have performed the following steps:
 - On the client application, specify the API access to the Web API (select the default `user_impersonation` scope as well as the two other scopes you created)
 - Provide the relevant app settings to both applications (Web App and Web API)
 
-Here are the relevant code fragments on the client side (the Web App):
+Here are the relevant code fragments on the client side (the ASP.NET Web App):
 
 - [Startup.cs (57)](Sample.Client.AspNetCore22/Startup.cs#L57): during the OpenID Connect sign-in, trigger a hybrid flow to request not only the ID token (which is the default) but also an authorization code
 - [Startup.cs (59)](Sample.Client.AspNetCore22/Startup.cs#L59): also request a refresh token to be able to renew the access token without having to prompt the user again
@@ -64,10 +71,30 @@ Here are the relevant code fragments on the server side (the Web API):
 - [Startup.cs (42)](Sample.Api.AspNetCore22/Startup.cs#L42): define the audience to ensure incoming tokens are only accepted if they are truly intended for _this_ application
 - [Startup.cs (59)](Sample.Api.AspNetCore22/Startup.cs#L59): define authorization rules so that the API can be secured based on the incoming token
 - [Startup.cs (61-68)](Sample.Api.AspNetCore22/Startup.cs#L61-L68): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected)
-- [Startup.cs (85)](Sample.Api.AspNetCore22/Startup.cs#L85): apply the baseline authorization policy to _all_ requests
+- [Startup.cs (85)](Sample.Api.AspNetCore22/Startup.cs#L95): apply the baseline authorization policy to _all_ requests
 - [Startup.cs (69-77)](Sample.Api.AspNetCore22/Startup.cs#L69-L77): define a `ReadIdentity` authorization policy that requires a scope claim for the configured "read" permission
 - [IdentityController.cs (9)](Sample.Api.AspNetCore22/Controllers/IdentityController.cs#L9): require that this controller can only be called when it satisfies the `ReadIdentity` authorization policy defined above (i.e. when it has "read" permissions on the identity resource)
 - [IdentityController.cs (25)](Sample.Api.AspNetCore22/Controllers/IdentityController.cs#L25): access the claims in the token directly from the `User` object (which was populated automatically by the authentication middleware)
+
+### Web App Sign-In + Web API (JavaScript)
+
+This scenario allows users to sign in to a client-side web application using a "user flow" (policy) in Azure AD B2C and call the same Web API from JavaScript in the browser.
+
+To set this up locally, ensure you have performed the following steps:
+
+- Register an application in Azure AD B2C to represent the web application
+  - Use `https://localhost:5005` as the Reply URL
+  - Ensure to allow the implicit flow
+- On the client application, specify the API access to the Web API (select the default `user_impersonation` scope as well as the two other scopes you created)
+- Provide the relevant app settings to the application
+
+Here are the relevant code fragments:
+
+- [site.js (4-22)](Sample.Client.JQuery/wwwroot/site.js#L4-L22): define the relevant configuration settings
+- [site.js (23)](Sample.Client.JQuery/wwwroot/site.js#L23): use [MSAL.js](https://github.com/AzureAD/microsoft-authentication-library-for-js) to represent the user agent application
+- [site.js (27)](Sample.Client.JQuery/wwwroot/site.js#L27): sign the user in using a popup
+- [site.js (75-87)](Sample.Client.JQuery/wwwroot/site.js#L75-L87): acquire an access token for the back-end Web API
+- [site.js (63)](Sample.Client.JQuery/wwwroot/site.js#L63): send the access token as a "bearer" token to the back-end Web API
 
 ### User invitation using custom policy
 

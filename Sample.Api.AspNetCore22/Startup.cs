@@ -77,6 +77,16 @@ namespace Sample.Api.AspNetCore22
                 });
             });
 
+            // Allow CORS for any origin for this demo.
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder =>
+                {
+                    builder.AllowAnyOrigin();
+                    builder.AllowAnyHeader();
+                });
+            });
+
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 .AddMvcOptions(options =>
@@ -99,6 +109,7 @@ namespace Sample.Api.AspNetCore22
                 app.UseHsts();
             }
 
+            app.UseCors();
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseMvc();

@@ -4,8 +4,8 @@
     "windowsAuthentication": false, 
     "anonymousAuthentication": true, 
     "iisExpress": {
-      "applicationUrl": "http://localhost:53753",
-      "sslPort": 44323
+      "applicationUrl": "http://localhost:31077",
+      "sslPort": 44315
     }
   },
   "profiles": {
@@ -16,10 +16,10 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Sample.Api.AspNetCore22": {
+    "Sample.Client.JQuery": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:5003;http://localhost:5002",
+      "applicationUrl": "https://localhost:5005;http://localhost:5004",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
