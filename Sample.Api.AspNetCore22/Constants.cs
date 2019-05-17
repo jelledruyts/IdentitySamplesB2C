@@ -9,7 +9,6 @@ namespace Sample.Api.AspNetCore22
         
         public static class AuthorizationPolicies
         {
-            public const string Baseline = nameof(Baseline);
             public const string ReadIdentity = nameof(ReadIdentity);
             public const string ReadWriteIdentity = nameof(ReadWriteIdentity);
         }

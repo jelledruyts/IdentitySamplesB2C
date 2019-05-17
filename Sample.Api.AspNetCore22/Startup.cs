@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -58,14 +59,6 @@ namespace Sample.Api.AspNetCore22
 
             services.AddAuthorization(options =>
             {
-                options.AddPolicy(Constants.AuthorizationPolicies.Baseline, b =>
-                {
-                    // An authenticated user (i.e. an incoming JWT bearer token) is always required.
-                    b.RequireAuthenticatedUser();
-                    // A "scope" claim is also required, if not any application could simply request
-                    // a valid access token to call into this API without being authorized.
-                    b.RequireClaim(Constants.ClaimTypes.Scope);
-                });
                 options.AddPolicy(Constants.AuthorizationPolicies.ReadIdentity, b =>
                 {
                     b.RequireAssertion(context =>
@@ -91,8 +84,15 @@ namespace Sample.Api.AspNetCore22
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 .AddMvcOptions(options =>
                 {
-                    // Enforce the "baseline" policy at the minimum for all requests.
-                    options.Filters.Add(new AuthorizeFilter(Constants.AuthorizationPolicies.Baseline));
+                    // Enforce a "baseline" policy at the minimum for all requests.
+                    var baselinePolicy = new AuthorizationPolicyBuilder()
+                        // An authenticated user (i.e. an incoming JWT bearer token) is always required.
+                        .RequireAuthenticatedUser()
+                        // A "scope" claim is also required, if not any application could simply request
+                        // a valid access token to call into this API without being authorized.
+                        .RequireClaim(Constants.ClaimTypes.Scope)
+                        .Build();
+                    options.Filters.Add(new AuthorizeFilter(baselinePolicy));
                 });
         }
 

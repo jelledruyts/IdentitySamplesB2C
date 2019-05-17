@@ -66,13 +66,13 @@ Here are the relevant code fragments on the client side (the ASP.NET Web App):
 
 Here are the relevant code fragments on the server side (the Web API):
 
-- [Startup.cs (38-39)](Sample.Api.AspNetCore22/Startup.cs#L38-39): use OAuth 2.0 bearer tokens for authorization
-- [Startup.cs (41)](Sample.Api.AspNetCore22/Startup.cs#L41): define the authority, which allows the middleware to retrieve all details about the issuer (e.g. the signing keys to validate the token signature)
-- [Startup.cs (42)](Sample.Api.AspNetCore22/Startup.cs#L42): define the audience to ensure incoming tokens are only accepted if they are truly intended for _this_ application
-- [Startup.cs (59)](Sample.Api.AspNetCore22/Startup.cs#L59): define authorization rules so that the API can be secured based on the incoming token
-- [Startup.cs (61-68)](Sample.Api.AspNetCore22/Startup.cs#L61-L68): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected)
-- [Startup.cs (85)](Sample.Api.AspNetCore22/Startup.cs#L95): apply the baseline authorization policy to _all_ requests
-- [Startup.cs (69-77)](Sample.Api.AspNetCore22/Startup.cs#L69-L77): define a `ReadIdentity` authorization policy that requires a scope claim for the configured "read" permission
+- [Startup.cs (39-40)](Sample.Api.AspNetCore22/Startup.cs#L39-L40): use OAuth 2.0 bearer tokens for authorization
+- [Startup.cs (42)](Sample.Api.AspNetCore22/Startup.cs#L42): define the authority, which allows the middleware to retrieve all details about the issuer (e.g. the signing keys to validate the token signature)
+- [Startup.cs (43)](Sample.Api.AspNetCore22/Startup.cs#L43): define the audience to ensure incoming tokens are only accepted if they are truly intended for _this_ application
+- [Startup.cs (60)](Sample.Api.AspNetCore22/Startup.cs#L60): define authorization rules so that the API can be secured based on the incoming token
+- [Startup.cs (62-70)](Sample.Api.AspNetCore22/Startup.cs#L62-L70): define a `ReadIdentity` authorization policy that requires a scope claim for the configured "read" permission
+- [Startup.cs (87-94)](Sample.Api.AspNetCore22/Startup.cs#L87-L94): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected)
+- [Startup.cs (95)](Sample.Api.AspNetCore22/Startup.cs#L95): apply the baseline authorization policy to _all_ requests
 - [IdentityController.cs (9)](Sample.Api.AspNetCore22/Controllers/IdentityController.cs#L9): require that this controller can only be called when it satisfies the `ReadIdentity` authorization policy defined above (i.e. when it has "read" permissions on the identity resource)
 - [IdentityController.cs (25)](Sample.Api.AspNetCore22/Controllers/IdentityController.cs#L25): access the claims in the token directly from the `User` object (which was populated automatically by the authentication middleware)
 
@@ -136,9 +136,9 @@ To set this up locally, ensure you have performed the following steps:
 
 Here are the relevant code fragments on the application side:
 
-- [AccountController.cs (95-101)](Sample.Client.AspNetCore22/Controllers/AccountController.cs#L95-L101): generate a self-issued JWT token which includes the `verified_email` claim, and is signed with the application's client secret
-- [AccountController.cs (103-106)](Sample.Client.AspNetCore22/Controllers/AccountController.cs#L103-L106): generate an absolute link back to the application's account registration URL (including the client assertion)
-- [AccountController.cs (118-125)](Sample.Client.AspNetCore22/Controllers/AccountController.cs#L118-L125): when the user follows the link, the application triggers a sign-in against Azure AD B2C with a specific custom policy for the user invitation, and passes along the `client_assertion` it received in the link
+- [AccountController.cs (93-99)](Sample.Client.AspNetCore22/Controllers/AccountController.cs#L93-L99): generate a self-issued JWT token which includes the `verified_email` claim, and is signed with the application's client secret
+- [AccountController.cs (101-103)](Sample.Client.AspNetCore22/Controllers/AccountController.cs#L101-L103): generate an absolute link back to the application's account registration URL (including the client assertion)
+- [AccountController.cs (115-122)](Sample.Client.AspNetCore22/Controllers/AccountController.cs#L115-L122): when the user follows the link, the application triggers a sign-in against Azure AD B2C with a specific custom policy for the user invitation, and passes along the `client_assertion` it received in the link
 - [Startup.cs (92-98)](Sample.Client.AspNetCore22/Startup.cs#L92-L98): before redirecting to the identity provider (i.e. Azure AD B2C), the standard `client_assertion` and `client_assertion_type` request parameters are set so that they can be used from the custom policy
 
 Here are the relevant custom policy fragments:

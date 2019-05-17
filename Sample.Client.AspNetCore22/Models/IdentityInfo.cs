@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Sample.Client.AspNetCore22.Models
@@ -7,8 +8,6 @@ namespace Sample.Client.AspNetCore22.Models
     /// </summary>
     public class IdentityInfo
     {
-        #region Properties
-
         /// <summary>
         /// The source of the identity information.
         /// </summary>
@@ -37,23 +36,17 @@ namespace Sample.Client.AspNetCore22.Models
         /// <summary>
         /// The claims.
         /// </summary>
-        public IDictionary<string, string> Claims { get; set; }
+        public IEnumerable<ClaimInfo> Claims { get; set; }
 
         /// <summary>
         /// The identities as seen from other applications related to the current application.
         /// </summary>
         public IList<IdentityInfo> RelatedApplicationIdentities { get; set; }
 
-        #endregion
-
-        #region Constructors
-
         public IdentityInfo()
         {
-            this.Claims = new Dictionary<string, string>();
+            this.Claims = Array.Empty<ClaimInfo>();
             this.RelatedApplicationIdentities = new List<IdentityInfo>();
         }
-
-        #endregion
     }
 }

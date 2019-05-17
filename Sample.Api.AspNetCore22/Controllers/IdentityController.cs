@@ -22,7 +22,7 @@ namespace Sample.Api.AspNetCore22.Controllers
                 IsAuthenticated = this.User.Identity.IsAuthenticated,
                 Name = this.User.Identity.Name,
                 AuthenticationType = this.User.Identity.AuthenticationType,
-                Claims = this.User.Claims.ToDictionary(c => c.Type, c => c.Value),
+                Claims = this.User.Claims.Select(c => new ClaimInfo { Type = c.Type, Value = c.Value }).ToList(),
                 RelatedApplicationIdentities = Array.Empty<IdentityInfo>()
             };
         }

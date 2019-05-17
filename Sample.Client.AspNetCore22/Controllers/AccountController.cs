@@ -20,6 +20,7 @@ using Sample.Client.AspNetCore22.Models;
 
 namespace Sample.Client.AspNetCore22.Controllers
 {
+    [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
         private readonly IHttpClientFactory httpClientFactory;
@@ -33,7 +34,6 @@ namespace Sample.Client.AspNetCore22.Controllers
             this.invitationPolicyId = configuration["AzureAdB2C:InvitationPolicyId"];
         }
 
-        [Route("[controller]/[action]")]
         public async Task<IActionResult> Identity()
         {
             var relatedApplicationIdentities = new List<IdentityInfo>();
@@ -63,7 +63,7 @@ namespace Sample.Client.AspNetCore22.Controllers
                     Source = "Exception",
                     Application = "Sample API",
                     IsAuthenticated = false,
-                    Claims = new Dictionary<string, string> { { "ExceptionMessage", exc.Message }, { "ExceptionDetail", exc.ToString() } }
+                    Claims = new[] { new ClaimInfo { Type = "ExceptionMessage", Value = exc.Message }, new ClaimInfo { Type = "ExceptionDetail", Value = exc.ToString() } }
                 });
             }
             // Return identity information as seen from this application, including related applications.
@@ -74,19 +74,17 @@ namespace Sample.Client.AspNetCore22.Controllers
                 IsAuthenticated = this.User.Identity.IsAuthenticated,
                 Name = this.User.Identity.Name,
                 AuthenticationType = this.User.Identity.AuthenticationType,
-                Claims = this.User.Claims.ToDictionary(c => c.Type, c => c.Value),
+                Claims = this.User.Claims.Select(c => new ClaimInfo { Type = c.Type, Value = c.Value }).ToList(),
                 RelatedApplicationIdentities = relatedApplicationIdentities
             };
             return View(identityInfo);
         }
 
-        [Route("[controller]/[action]")]
         public IActionResult Invite()
         {
             return View();
         }
 
-        [Route("[controller]/[action]")]
         [HttpPost]
         public IActionResult Invite(string email, int validDays = 30)
         {
@@ -108,7 +106,6 @@ namespace Sample.Client.AspNetCore22.Controllers
             return RedirectToAction("Invite");
         }
 
-        [Route("[controller]/[action]")]
         public async Task<IActionResult> Register(string client_assertion)
         {
             if (string.IsNullOrWhiteSpace(client_assertion))
@@ -127,7 +124,6 @@ namespace Sample.Client.AspNetCore22.Controllers
         }
 
         [Authorize]
-        [Route("[controller]/[action]")]
         public IActionResult Registered()
         {
             return View();

@@ -44,7 +44,7 @@ namespace Sample.Client.AspNetCore22
             // See https://leastprivilege.com/2017/11/15/missing-claims-in-the-asp-net-core-2-openid-connect-handler/.
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-            // Add AAD B2C authentication using OpenID Connect.
+            // Add Azure AD B2C authentication using OpenID Connect.
             services.AddAuthentication(AzureADB2CDefaults.AuthenticationScheme)
                 .AddAzureADB2C(options => Configuration.Bind("AzureAdB2C", options));
             services.Configure<OpenIdConnectOptions>(AzureADB2CDefaults.OpenIdScheme, options =>
@@ -56,7 +56,7 @@ namespace Sample.Client.AspNetCore22
 
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken; // Trigger a hybrid OIDC + auth code flow.
                 // NOTE: The scopes must be set here so they are requested from the beginning, requesting these during the auth code redemption doesn't work.
-                options.Scope.Add("offline_access"); // Request a "refresh_token" as part of the auth code flow.
+                options.Scope.Add(OpenIdConnectScope.OfflineAccess); // Request a refresh token as part of the auth code flow.
                 // OPTION 1: Request an "access_token" for the API represented by the same application as part of the auth code flow.
                 // This is done (by convention) by requesting the application's Client ID as the scope.
                 // See https://docs.microsoft.com/en-us/azure/active-directory-b2c/active-directory-b2c-reference-oidc#get-a-token.
@@ -130,8 +130,13 @@ namespace Sample.Client.AspNetCore22
                     return Task.CompletedTask;
                 };
 
+                var onTokenValidated = options.Events.OnTokenValidated;
                 options.Events.OnTokenValidated = context =>
                 {
+                    if (onTokenValidated != null)
+                    {
+                        onTokenValidated(context);
+                    }
                     var identity = (ClaimsIdentity)context.Principal.Identity;
                     //context.Properties.IsPersistent = true; // Optionally ensure the cookie is persistent across browser sessions.
                     return Task.CompletedTask;
@@ -143,7 +148,7 @@ namespace Sample.Client.AspNetCore22
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-            services.AddRouting(setup => { setup.LowercaseUrls = true; });
+            services.AddRouting(options => { options.LowercaseUrls = true; });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
