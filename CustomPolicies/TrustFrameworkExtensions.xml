@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<TrustFrameworkPolicy 
+<TrustFrameworkPolicy
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
   xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
-  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" 
-  PolicySchemaVersion="0.3.0.0" 
-  TenantId="identitysamplesb2c.onmicrosoft.com" 
-  PolicyId="B2C_1A_TrustFrameworkExtensions" 
+  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06"
+  PolicySchemaVersion="0.3.0.0"
+  TenantId="identitysamplesb2c.onmicrosoft.com"
+  PolicyId="B2C_1A_TrustFrameworkExtensions"
   PublicPolicyUri="http://identitysamplesb2c.onmicrosoft.com/B2C_1A_TrustFrameworkExtensions">
-  
+
   <BasePolicy>
     <TenantId>identitysamplesb2c.onmicrosoft.com</TenantId>
     <PolicyId>B2C_1A_TrustFrameworkBase</PolicyId>
@@ -108,6 +108,35 @@
         </TechnicalProfile>
       </TechnicalProfiles>
     </ClaimsProvider>
+    <ClaimsProvider>
+      <DisplayName>SAML Token Issuer</DisplayName>
+      <TechnicalProfiles>
+        <!-- SAML Token Issuer technical profile -->
+        <TechnicalProfile Id="Saml2AssertionIssuer">
+          <DisplayName>SAML Token Issuer</DisplayName>
+          <Protocol Name="None" />
+          <OutputTokenFormat>SAML2</OutputTokenFormat>
+          <Metadata>
+            <!-- The issuer contains the policy name; it should be the same name as configured in the relying party application. -->
+            <!-- If you don't specify the IssuerUri then you get a default one, e.g. "https://login.microsoftonline.com/te/identitysamplesb2c.onmicrosoft.com/B2C_1A_TrustFrameworkBase" -->
+            <Item Key="IssuerUri">https://identitysamplesb2c.b2clogin.com/identitysamplesb2c.onmicrosoft.com/B2C_1A_SignUpOrSignInSaml</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="MetadataSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />
+            <Key Id="SamlAssertionSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />
+            <Key Id="SamlMessageSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />
+          </CryptographicKeys>
+          <InputClaims/>
+          <OutputClaims/>
+          <UseTechnicalProfileForSessionManagement ReferenceId="SM-Saml" />
+        </TechnicalProfile>
+        <!-- Session management technical profile for SAML based tokens -->
+        <TechnicalProfile Id="SM-Saml">
+          <DisplayName>Session Management Provider</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.SSO.SamlSSOSessionProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
   </ClaimsProviders>
 
   <UserJourneys>
@@ -123,6 +152,6 @@
       </OrchestrationSteps>
       <ClientDefinition ReferenceId="DefaultWeb" />
     </UserJourney>
-	</UserJourneys>
+  </UserJourneys>
 
 </TrustFrameworkPolicy>
