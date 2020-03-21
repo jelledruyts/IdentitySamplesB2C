@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Sample.Client.JQuery
+namespace Sample.Client.AspNetCore
 {
     public class Program
     {

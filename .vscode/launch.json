@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Sample.Client.AspNetCore22",
+            "name": "Sample.Client.AspNetCore",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Sample.Client.AspNetCore22/bin/Debug/netcoreapp2.2/Sample.Client.AspNetCore22.dll",
+            "program": "${workspaceFolder}/Sample.Client.AspNetCore/bin/Debug/netcoreapp3.1/Sample.Client.AspNetCore.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/Sample.Client.AspNetCore22",
+            "cwd": "${workspaceFolder}/Sample.Client.AspNetCore",
             "stopAtEntry": false,
             "launchBrowser": {
                 "enabled": true,
@@ -39,7 +39,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Sample.Client.JQuery/bin/Debug/netcoreapp2.2/Sample.Client.JQuery.dll",
+            "program": "${workspaceFolder}/Sample.Client.JQuery/bin/Debug/netcoreapp3.1/Sample.Client.JQuery.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Sample.Client.JQuery",
             "stopAtEntry": false,
@@ -62,14 +62,14 @@
             }
         },
         {
-            "name": "Sample.Api.AspNetCore22",
+            "name": "Sample.Api.AspNetCore",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Sample.Api.AspNetCore22/bin/Debug/netcoreapp2.2/Sample.Api.AspNetCore22.dll",
+            "program": "${workspaceFolder}/Sample.Api.AspNetCore/bin/Debug/netcoreapp3.1/Sample.Api.AspNetCore.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/Sample.Api.AspNetCore22",
+            "cwd": "${workspaceFolder}/Sample.Api.AspNetCore",
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart",
             "launchBrowser": {

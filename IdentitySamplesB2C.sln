@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Api.AspNetCore22", "Sample.Api.AspNetCore22\Sample.Api.AspNetCore22.csproj", "{2F17C154-870E-45A8-B5C9-7358CB433728}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Api.AspNetCore", "Sample.Api.AspNetCore\Sample.Api.AspNetCore.csproj", "{2F17C154-870E-45A8-B5C9-7358CB433728}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Client.AspNetCore22", "Sample.Client.AspNetCore22\Sample.Client.AspNetCore22.csproj", "{E5DE8D26-A30E-4228-9D9F-D2622323DBE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Client.AspNetCore", "Sample.Client.AspNetCore\Sample.Client.AspNetCore.csproj", "{E5DE8D26-A30E-4228-9D9F-D2622323DBE7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Client.JQuery", "Sample.Client.JQuery\Sample.Client.JQuery.csproj", "{2FE72479-1566-49AE-9CC2-CA90173CCEC8}"
 EndProject
