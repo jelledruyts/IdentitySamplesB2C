@@ -5,6 +5,7 @@ namespace Sample.Api.AspNetCore
         public static class ClaimTypes
         {
             public const string Scope = "scp";
+            public const string Roles = "roles";
         }
         
         public static class AuthorizationPolicies
@@ -17,6 +18,11 @@ namespace Sample.Api.AspNetCore
         {
             public static string IdentityRead { get; set; }
             public static string IdentityReadWrite { get; set; }
+        }
+
+        public static class Roles
+        {
+            public static string IdentityReader { get; set; }
         }
     }
 }

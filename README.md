@@ -25,6 +25,7 @@ The following scenarios are showcased:
     - [Web App Sign-In (ASP.NET Core)](#web-app-sign-in-aspnet-core)
     - [Web App calling Web API](#web-app-calling-web-api)
     - [Web App Sign-In + Web API (JavaScript)](#web-app-sign-in--web-api-javascript)
+    - [Console App calling Web API](#console-app-calling-web-api)
     - [User invitation using custom policy](#user-invitation-using-custom-policy)
 
 ### Web App Sign-In (ASP.NET Core)
@@ -69,13 +70,13 @@ Here are the relevant code fragments on the client side (the ASP.NET Web App):
 
 Here are the relevant code fragments on the server side (the Web API):
 
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L34-L35): use OAuth 2.0 bearer tokens for authorization
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L37): define the authority, which allows the middleware to retrieve all details about the issuer (e.g. the signing keys to validate the token signature)
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L38): define the audience to ensure incoming tokens are only accepted if they are truly intended for _this_ application
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L55): define authorization rules so that the API can be secured based on the incoming token
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L57-L65): define a `ReadIdentity` authorization policy that requires a scope claim for the configured "read" permission
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L82-L88): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected)
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L89): apply the baseline authorization policy to _all_ requests
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L37-L39): use OAuth 2.0 bearer tokens for authorization
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L41): define the authority, which allows the middleware to retrieve all details about the issuer (e.g. the signing keys to validate the token signature)
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L42): define the audience to ensure incoming tokens are only accepted if they are truly intended for _this_ application
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L80): define authorization rules so that the API can be secured based on the incoming token
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L82-L98): define a `ReadIdentity` authorization policy that requires a "read" permission through an appropriate scope claim (for users) or role claim (for applications)
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L114-L126): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected) and either at least one scope claim (for users) or role claim (for applications)
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L127): apply the baseline authorization policy to _all_ requests
 - [IdentityController.cs](Sample.Api.AspNetCore/Controllers/IdentityController.cs#L9): require that this controller can only be called when it satisfies the `ReadIdentity` authorization policy defined above (i.e. when it has "read" permissions on the identity resource)
 - [IdentityController.cs](Sample.Api.AspNetCore/Controllers/IdentityController.cs#L25): access the claims in the token directly from the `User` object (which was populated automatically by the authentication middleware)
 
@@ -98,6 +99,27 @@ Here are the relevant code fragments:
 - [site.js](Sample.Client.JQuery/wwwroot/site.js#L55): sign the user in using a popup
 - [site.js](Sample.Client.JQuery/wwwroot/site.js#L119-L130): acquire an access token for the back-end Web API
 - [site.js](Sample.Client.JQuery/wwwroot/site.js#L105): send the access token as a "bearer" token to the back-end Web API
+
+### Console App calling Web API
+
+This scenario demonstrates that a .NET Core console application can perform a call to an external Web API _on behalf of the application itself_ (i.e. not on behalf of any user). This uses an OAuth 2.0 Client Credentials flow to acquire the access token to send to the Web API. Note that currently, Azure AD B2C does not directly support the Client Credentials flow (as B2C is all about _user_ flows), but you can still use the underlying Azure AD endpoints as with a non-B2C scenario. The challenge is that this uses different signing keys and other metadata, which means the Web API must be explicitly configured to trust _both_ these issuers.
+
+To set this up locally, ensure you have performed the following steps:
+
+- Update the app registration for the Web API
+  - [Publish an app role](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-add-app-roles-in-azure-ad-apps#declare-roles-for-an-application) for granting the client application (i.e. with `allowedMemberTypes` set to `Application`) read permissions (e.g. with value `Identity.Reader`)
+- Register an application in Azure AD B2C to represent the console app
+  - Specify the API access to the Web API to grant it permissions to the app role you just registered (make sure to perform an admin consent for this permission)
+- Provide the relevant app settings to the console app
+
+Here are the relevant code fragments on the client side (the console app):
+
+- [Program.cs](Sample.Client.ConsoleNetCore/Program.cs#L48-49): use [MSAL.NET](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/) to request an access token for the `/.default` scope of the Web API (which is required for the Client Credentials flow)
+- [Program.cs](Sample.Client.ConsoleNetCore/Program.cs#L54): send the access token as a "bearer" token to the back-end Web API
+
+Here are the relevant code fragments on the server side (the Web API):
+
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L58-L78): add an additional JWT bearer configuration to trust the additional authority, i.e. the signing keys of the underlying Azure AD issuer of the B2C tenant
 
 ### User invitation using custom policy
 

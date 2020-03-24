@@ -62,6 +62,19 @@
             }
         },
         {
+            "name": "Sample.Client.ConsoleNetCore",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Sample.Client.ConsoleNetCore/bin/Debug/netcoreapp3.1/Sample.Client.ConsoleNetCore.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Sample.Client.ConsoleNetCore",
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
             "name": "Sample.Api.AspNetCore",
             "type": "coreclr",
             "request": "launch",
