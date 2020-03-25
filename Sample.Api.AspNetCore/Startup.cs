@@ -57,6 +57,7 @@ namespace Sample.Api.AspNetCore
                 })
                 // Add a secondary JWT bearer configuration for the underlying Azure AD tenant endpoint
                 // that is used by the OAuth 2.0 Client Credentials grant.
+                // See https://docs.microsoft.com/en-us/aspnet/core/security/authorization/limitingidentitybyscheme#use-multiple-authentication-schemes.
                 .AddJwtBearer(aadAuthenticationScheme, options =>
                 {
                     options.Authority = $"https://login.microsoftonline.com/{Configuration["AzureAdB2C:Domain"]}/v2.0/";
@@ -112,6 +113,8 @@ namespace Sample.Api.AspNetCore
                 .AddMvcOptions(options =>
                 {
                     // Enforce a "baseline" policy at the minimum for all requests.
+                    // Note that this is different from specifying AuthorizationOptions.DefaultPolicy, which
+                    // is only used when no policy id was explicitly mentioned (e.g. with just [Authorize]).
                     var baselinePolicy = new AuthorizationPolicyBuilder()
                         // Ensure to enforce this on both authentication schemes.
                         .AddAuthenticationSchemes(b2cAuthenticationScheme, aadAuthenticationScheme)

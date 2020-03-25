@@ -73,10 +73,10 @@ Here are the relevant code fragments on the server side (the Web API):
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L37-L39): use OAuth 2.0 bearer tokens for authorization
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L41): define the authority, which allows the middleware to retrieve all details about the issuer (e.g. the signing keys to validate the token signature)
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L42): define the audience to ensure incoming tokens are only accepted if they are truly intended for _this_ application
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L80): define authorization rules so that the API can be secured based on the incoming token
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L82-L98): define a `ReadIdentity` authorization policy that requires a "read" permission through an appropriate scope claim (for users) or role claim (for applications)
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L114-L126): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected) and either at least one scope claim (for users) or role claim (for applications)
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L127): apply the baseline authorization policy to _all_ requests
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L81): define authorization rules so that the API can be secured based on the incoming token
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L83-L99): define a `ReadIdentity` authorization policy that requires a "read" permission through an appropriate scope claim (for users) or role claim (for applications)
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L114-L129): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected) and either at least one scope claim (for users) or role claim (for applications)
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L130): apply the baseline authorization policy to _all_ requests
 - [IdentityController.cs](Sample.Api.AspNetCore/Controllers/IdentityController.cs#L9): require that this controller can only be called when it satisfies the `ReadIdentity` authorization policy defined above (i.e. when it has "read" permissions on the identity resource)
 - [IdentityController.cs](Sample.Api.AspNetCore/Controllers/IdentityController.cs#L25): access the claims in the token directly from the `User` object (which was populated automatically by the authentication middleware)
 
@@ -119,7 +119,7 @@ Here are the relevant code fragments on the client side (the console app):
 
 Here are the relevant code fragments on the server side (the Web API):
 
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L58-L78): add an additional JWT bearer configuration to trust the additional authority, i.e. the signing keys of the underlying Azure AD issuer of the B2C tenant
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L58-L79): add an additional JWT bearer configuration to trust the additional authority, i.e. the signing keys of the underlying Azure AD issuer of the B2C tenant
 
 ### User invitation using custom policy
 
