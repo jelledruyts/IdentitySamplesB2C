@@ -85,6 +85,7 @@ namespace Sample.Functions
                 if (string.IsNullOrWhiteSpace(invitationCode) || invitationCode.Length < 10)
                 {
                     // No invitation code was found in the request or it was too short, return a validation error.
+                    log.LogInformation($"The provided invitation code \"{invitationCode}\" is invalid.");
                     return GetValidationErrorApiResponse("UserInvitationRedemptionFailed-Invalid", "The invitation code you provided is invalid.");
                 }
                 else
