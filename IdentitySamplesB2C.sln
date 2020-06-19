@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Client.JQuery", "Sam
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Client.ConsoleNetCore", "Sample.Client.ConsoleNetCore\Sample.Client.ConsoleNetCore.csproj", "{A69934D2-6CD4-494F-BBA1-6F291BE5DCC4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Functions", "Sample.Functions\Sample.Functions.csproj", "{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,17 @@ Global
 		{A69934D2-6CD4-494F-BBA1-6F291BE5DCC4}.Release|x64.Build.0 = Release|Any CPU
 		{A69934D2-6CD4-494F-BBA1-6F291BE5DCC4}.Release|x86.ActiveCfg = Release|Any CPU
 		{A69934D2-6CD4-494F-BBA1-6F291BE5DCC4}.Release|x86.Build.0 = Release|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Debug|x64.Build.0 = Debug|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Debug|x86.Build.0 = Debug|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Release|x64.ActiveCfg = Release|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Release|x64.Build.0 = Release|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Release|x86.ActiveCfg = Release|Any CPU
+		{63C4F225-5DDD-49B2-8EBA-98974E5FAADA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -86,9 +86,8 @@ This scenario allows users to sign in to a client-side web application using a "
 
 To set this up locally, ensure you have performed the following steps:
 
-- Register an application in Azure AD B2C to represent the web application
+- Register a "Single-page application" in Azure AD B2C to represent the web application
   - Use `https://localhost:5005` as the Reply URL
-  - Ensure to allow the implicit flow
 - On the client application, specify the API access to the Web API (select the default `user_impersonation` scope as well as the two other scopes you created)
 - Provide the relevant app settings to the application
 
