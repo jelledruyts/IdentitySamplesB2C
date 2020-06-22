@@ -25,13 +25,17 @@ namespace Sample.Client.AspNetCore.Controllers
     {
         private readonly IHttpClientFactory httpClientFactory;
         private readonly string signingSecret;
-        private readonly string invitationPolicyId;
+        private readonly string invitationClientAssertionPolicyId;
+        private readonly string invitationCodePolicyId;
+        private readonly string userInvitationApiUrl;
 
         public AccountController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             this.httpClientFactory = httpClientFactory;
             this.signingSecret = configuration["AzureAdB2C:ClientSecret"];
-            this.invitationPolicyId = configuration["AzureAdB2C:InvitationPolicyId"];
+            this.invitationClientAssertionPolicyId = configuration["AzureAdB2C:InvitationClientAssertionPolicyId"];
+            this.invitationCodePolicyId = configuration["AzureAdB2C:InvitationCodePolicyId"];
+            this.userInvitationApiUrl = configuration["UserInvitationApiUrl"];
         }
 
         public async Task<IActionResult> Identity()
@@ -82,11 +86,13 @@ namespace Sample.Client.AspNetCore.Controllers
 
         public IActionResult Invite()
         {
+            this.ViewData["CanInviteUsingClientAssertion"] = !string.IsNullOrWhiteSpace(this.signingSecret);
+            this.ViewData["CanInviteUsingInvitationCode"] = !string.IsNullOrWhiteSpace(this.userInvitationApiUrl);
             return View();
         }
 
         [HttpPost]
-        public IActionResult Invite(string email, int validDays = 30)
+        public IActionResult InviteUsingClientAssertion(string email, int validDays = 30)
         {
             if (!string.IsNullOrEmpty(email))
             {
@@ -101,24 +107,54 @@ namespace Sample.Client.AspNetCore.Controllers
                 var authenticationRequestUrl = Url.Action("Register", "Account", new { client_assertion = selfIssuedToken }, "https" /* This forces an absolute URL */);
                 this.ViewData["Email"] = email;
                 this.ViewData["AuthenticationRequestUrl"] = authenticationRequestUrl;
-                return View();
+                return View(nameof(Invite));
             }
-            return RedirectToAction("Invite");
+            return RedirectToAction(nameof(Invite));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> InviteUsingInvitationCode(string companyId)
+        {
+            if (!string.IsNullOrEmpty(this.userInvitationApiUrl))
+            {
+                var client = this.httpClientFactory.CreateClient();
+                var invitationCodeRequest = new { CompanyId = companyId };
+                var invitationCodeRequestContent = new StringContent(JsonConvert.SerializeObject(invitationCodeRequest), Encoding.UTF8, "application/json");
+                var response = await client.PostAsync(this.userInvitationApiUrl, invitationCodeRequestContent);
+                response.EnsureSuccessStatusCode();
+
+                var invitationCodeResponseValue = await response.Content.ReadAsStringAsync();
+                dynamic invitationCodeResponse = JsonConvert.DeserializeObject(invitationCodeResponseValue);
+                var invitationCode = invitationCodeResponse?.invitationCode;
+
+                var authenticationRequestUrl = Url.Action("Register", "Account", null, "https" /* This forces an absolute URL */);
+                this.ViewData["CompanyId"] = companyId;
+                this.ViewData["InvitationCode"] = invitationCode;
+                this.ViewData["AuthenticationRequestUrl"] = authenticationRequestUrl;
+                return View(nameof(Invite));
+            }
+            return RedirectToAction(nameof(Invite));
         }
 
         public async Task<IActionResult> Register(string client_assertion)
         {
-            if (string.IsNullOrWhiteSpace(client_assertion))
-            {
-                return BadRequest();
-            }
-            // Tell the AAD B2C middleware to invoke a specific policy and pass the client assertion through.
-            var authenticationProperties = new AuthenticationProperties();
-            authenticationProperties.RedirectUri = Url.Action("Registered", "Account");
+            // Tell the AAD B2C middleware to invoke a specific policy.
             // NOTE: this resets the scope and response type so no authorization code is requested from this flow,
             // see https://github.com/aspnet/AspNetCore/blob/release/3.1/src/Azure/AzureAD/Authentication.AzureADB2C.UI/src/AzureAdB2COpenIDConnectEventHandlers.cs#L35-L36.
-            authenticationProperties.Items[AzureADB2CDefaults.PolicyKey] = this.invitationPolicyId;
-            authenticationProperties.Items[OpenIdConnectParameterNames.ClientAssertion] = client_assertion;
+            var authenticationProperties = new AuthenticationProperties();
+            authenticationProperties.RedirectUri = Url.Action("Registered", "Account");
+
+            if (!string.IsNullOrWhiteSpace(client_assertion))
+            {
+                // Use the client assertion flow and pass the client_assertion through.
+                authenticationProperties.Items[AzureADB2CDefaults.PolicyKey] = this.invitationClientAssertionPolicyId;
+                authenticationProperties.Items[OpenIdConnectParameterNames.ClientAssertion] = client_assertion;
+            }
+            else
+            {
+                // Use the invitation code flow.
+                authenticationProperties.Items[AzureADB2CDefaults.PolicyKey] = this.invitationCodePolicyId;
+            }
             await HttpContext.ChallengeAsync(AzureADB2CDefaults.AuthenticationScheme, authenticationProperties);
             return new EmptyResult();
         }
