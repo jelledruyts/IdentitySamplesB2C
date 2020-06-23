@@ -9,9 +9,13 @@ This repository contains a Visual Studio (Code) solution that demonstrates moder
 The solution consists of the following parts:
 
 - `Sample.Client.AspNetCore`
-  - This is a server-side ASP.NET Core web application that users can sign into (using OpenID Connect) and which calls into a secured Web API (using OAuth 2.0 bearer tokens)
+  - This is a server-side ASP.NET Core web application that users can sign into (using OpenID Connect) and which calls into a secured Web API (using OAuth 2.0 bearer tokens).
+- `Sample.Client.JQuery`
+  - This is a client-side JQuery based Single-Page Application that users can sign into (using OpenID Connect) and which calls into a secured Web API (using OAuth 2.0 bearer tokens).
+- `Sample.Client.ConsoleNetCore`
+  - This is a daemon type application which runs without a signed-in user context, using its own client credentials.
 - `Sample.Api.AspNetCore`
-  - This is an ASP.NET Core Web API which is protected by OAuth 2.0 bearer tokens
+  - This is an ASP.NET Core Web API which is protected by OAuth 2.0 bearer tokens.
 - `CustomPolicies`
   - This folder contains custom policies for Azure AD B2C
 
@@ -26,7 +30,7 @@ The following scenarios are showcased:
     - [Web App calling Web API](#web-app-calling-web-api)
     - [Web App Sign-In + Web API (JavaScript)](#web-app-sign-in--web-api-javascript)
     - [Console App calling Web API](#console-app-calling-web-api)
-    - [User invitation using custom policy](#user-invitation-using-custom-policy)
+    - [User invitation using custom policy and `client_assertion` (deprecated)](#user-invitation-using-custom-policy-and-client_assertion-deprecated)
 
 ### Web App Sign-In (ASP.NET Core)
 
@@ -61,12 +65,12 @@ To set this up locally, ensure you have performed the following steps:
 
 Here are the relevant code fragments on the client side (the ASP.NET Web App):
 
-- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L61): during the OpenID Connect sign-in, trigger a hybrid flow to request not only the ID token (which is the default) but also an authorization code
-- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L63): also request a refresh token to be able to renew the access token without having to prompt the user again
-- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L69-71): define the scopes (and thereby implicitly the API) for which the access token is requested (by redeeming it from the authorization code)
-- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L131-L133): when the authorization code has been redeemed for the access token, it would typically get stored in a cache (e.g. an [MSAL.NET token cache](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Acquiring-tokens-with-authorization-codes-on-web-apps)); here for simplicity we'll just add it to the user claims so it is serialized as part of the authentication cookie and can be easily retrieved later
-- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L45): retrieve the access token for the back-end Web API from the user's claims (which were automatically deserialized from the authentication cookie where they were stored in the previous step)
-- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L49): send the access token as a "bearer" token to the back-end Web API
+- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L56): during the OpenID Connect sign-in, trigger a hybrid flow to request not only the ID token (which is the default) but also an authorization code
+- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L58): also request a refresh token to be able to renew the access token without having to prompt the user again
+- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L64-67): define the scopes (and thereby implicitly the API) for which the access token is requested (by redeeming it from the authorization code)
+- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L126-L128): when the authorization code has been redeemed for the access token, it would typically get stored in a cache (e.g. an [MSAL.NET token cache](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Acquiring-tokens-with-authorization-codes-on-web-apps); here for simplicity we'll just add it to the user claims so it is serialized as part of the authentication cookie and can be easily retrieved later
+- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L49): retrieve the access token for the back-end Web API from the user's claims (which were automatically deserialized from the authentication cookie where they were stored in the previous step)
+- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L53): send the access token as a "bearer" token to the back-end Web API
 
 Here are the relevant code fragments on the server side (the Web API):
 
@@ -75,7 +79,7 @@ Here are the relevant code fragments on the server side (the Web API):
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L42): define the audience to ensure incoming tokens are only accepted if they are truly intended for _this_ application
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L81): define authorization rules so that the API can be secured based on the incoming token
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L83-L99): define a `ReadIdentity` authorization policy that requires a "read" permission through an appropriate scope claim (for users) or role claim (for applications)
-- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L114-L129): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected) and either at least one scope claim (for users) or role claim (for applications)
+- [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L115-L129): define a baseline authorization policy that requires at least an authenticated user (i.e. calls without a valid access token will be rejected) and either at least one scope claim (for users) or role claim (for applications)
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L130): apply the baseline authorization policy to _all_ requests
 - [IdentityController.cs](Sample.Api.AspNetCore/Controllers/IdentityController.cs#L9): require that this controller can only be called when it satisfies the `ReadIdentity` authorization policy defined above (i.e. when it has "read" permissions on the identity resource)
 - [IdentityController.cs](Sample.Api.AspNetCore/Controllers/IdentityController.cs#L25): access the claims in the token directly from the `User` object (which was populated automatically by the authentication middleware)
@@ -120,11 +124,11 @@ Here are the relevant code fragments on the server side (the Web API):
 
 - [Startup.cs](Sample.Api.AspNetCore/Startup.cs#L58-L79): add an additional JWT bearer configuration to trust the additional authority, i.e. the signing keys of the underlying Azure AD issuer of the B2C tenant
 
-### User invitation using custom policy
+### User invitation using custom policy and `client_assertion` (deprecated)
 
 This scenario demonstrates that you can use Azure AD B2C not only for traditional self-service sign-up of end users, but that you can also lock down the directory and application by only allowing users to sign up that you have explicitly invited.
 
-> Note that this scenario is also covered in the very extensive [WingTip Games B2C sample solution](https://github.com/Azure-Samples/active-directory-b2c-advanced-policies/blob/master/wingtipgamesb2c/), especially check out the [invitation flow documentation](https://github.com/Azure-Samples/active-directory-b2c-advanced-policies/blob/master/wingtipgamesb2c/Implementing%20an%20invitation%20flow%2C%20Sample%20by%20Kloud.docx) for details. However, this sample solution and its custom policies cover _many_ scenarios which makes it difficult to focus only on this individual use case.
+> Note that passing a `client_assertion` into a user journey is [deprecated in Azure AD B2C](https://docs.microsoft.com/azure/active-directory-b2c/custom-policy-developer-notes#app-ief-integration). The alternative approach is to use an `id_token_hint` instead (which doesn't use a shared secret between the application and the token service, but relies on public/private keys that are discovered through metadata at runtime). See the [SignUp with email invitation sample](https://github.com/azure-ad-b2c/samples/tree/master/policies/invite) for details.
 
 This is a brief summary of how this scenario works:
 
@@ -160,10 +164,10 @@ To set this up locally, ensure you have performed the following steps:
 
 Here are the relevant code fragments on the application side:
 
-- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L94-L99): generate a self-issued JWT token which includes the `verified_email` claim, and is signed with the application's client secret
-- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L101-L103): generate an absolute link back to the application's account registration URL (including the client assertion)
-- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L116-L122): when the user follows the link, the application triggers a sign-in against Azure AD B2C with a specific custom policy for the user invitation, and passes along the `client_assertion` it received in the link
-- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L96-L102): before redirecting to the identity provider (i.e. Azure AD B2C), the standard `client_assertion` and `client_assertion_type` request parameters are set so that they can be used from the custom policy
+- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L99-L105): generate a self-issued JWT token which includes the `verified_email` claim, and is signed with the application's client secret
+- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L107-L109): generate an absolute link back to the application's account registration URL (including the client assertion)
+- [AccountController.cs](Sample.Client.AspNetCore/Controllers/AccountController.cs#L149-L151): when the user follows the link, the application triggers a sign-in against Azure AD B2C with a specific custom policy for the user invitation, and passes along the `client_assertion` it received in the link
+- [Startup.cs](Sample.Client.AspNetCore/Startup.cs#L91-L97): before redirecting to the identity provider (i.e. Azure AD B2C), the standard `client_assertion` and `client_assertion_type` request parameters are set so that they can be used from the custom policy
 
 Here are the relevant custom policy fragments:
 
