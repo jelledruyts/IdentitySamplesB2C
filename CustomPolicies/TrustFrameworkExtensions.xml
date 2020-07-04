@@ -123,8 +123,14 @@
           </Metadata>
           <CryptographicKeys>
             <Key Id="MetadataSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />
-            <Key Id="SamlAssertionSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />
             <Key Id="SamlMessageSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />
+            <Key Id="SamlAssertionSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />
+            <!--
+              The SamlAssertionDecryption key is needed in order for AAD B2C to issue encrypted SAML assertions - even though it technically doesn't need any decryption key
+              as this is only required when it's acting as a Service Provider towards a SAML IdP which has encrypted *incoming* assertions; in this case AAD B2C is acting
+              as an IdP itself that needs to issue encrypted tokens towards the Service Provider (client application).
+            -->
+            <Key Id="SamlAssertionDecryption" StorageReferenceId="B2C_1A_SamlAppB2C" />
           </CryptographicKeys>
           <InputClaims/>
           <OutputClaims/>
