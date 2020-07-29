@@ -15,7 +15,22 @@
     <PolicyId>B2C_1A_TrustFrameworkExtensions</PolicyId>
   </BasePolicy>
 
-  <!-- The following policy is used for registering a local via an invitation link. -->
+  <UserJourneys>
+    <UserJourney Id="Invitation">
+      <PreserveOriginalAssertion>false</PreserveOriginalAssertion>
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="LocalAccountRegistrationExchange" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonEmail-Verified" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+  </UserJourneys>
+
+  <!-- The following policy is used for registering a local account via an invitation link. -->
   <RelyingParty>
     <DefaultUserJourney ReferenceId="Invitation" />
     <UserJourneyBehaviors>

@@ -1,6 +1,6 @@
+using Sample.Client.AspNetCore.Models;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
@@ -16,7 +16,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using Sample.Client.AspNetCore.Models;
 
 namespace Sample.Client.AspNetCore.Controllers
 {
@@ -86,9 +85,12 @@ namespace Sample.Client.AspNetCore.Controllers
 
         public IActionResult Invite()
         {
-            this.ViewData["CanInviteUsingClientAssertion"] = !string.IsNullOrWhiteSpace(this.signingSecret);
-            this.ViewData["CanInviteUsingInvitationCode"] = !string.IsNullOrWhiteSpace(this.userInvitationApiUrl);
-            return View();
+            var model = new AccountInvitationViewModel
+            {
+                CanInviteUsingClientAssertion = !string.IsNullOrWhiteSpace(this.signingSecret),
+                CanInviteUsingInvitationCode = !string.IsNullOrWhiteSpace(this.userInvitationApiUrl)
+            };
+            return View(model);
         }
 
         [HttpPost]
@@ -105,9 +107,14 @@ namespace Sample.Client.AspNetCore.Controllers
                 var selfIssuedToken = CreateSelfIssuedToken(expiration, claims, this.signingSecret);
 
                 var authenticationRequestUrl = Url.Action("Register", "Account", new { client_assertion = selfIssuedToken }, "https" /* This forces an absolute URL */);
-                this.ViewData["Email"] = email;
-                this.ViewData["AuthenticationRequestUrl"] = authenticationRequestUrl;
-                return View(nameof(Invite));
+                var model = new AccountInvitationViewModel
+                {
+                    CanInviteUsingClientAssertion = !string.IsNullOrWhiteSpace(this.signingSecret),
+                    CanInviteUsingInvitationCode = !string.IsNullOrWhiteSpace(this.userInvitationApiUrl),
+                    Email = email,
+                    AuthenticationRequestUrl = authenticationRequestUrl
+                };
+                return View(nameof(Invite), model);
             }
             return RedirectToAction(nameof(Invite));
         }
@@ -125,13 +132,18 @@ namespace Sample.Client.AspNetCore.Controllers
 
                 var invitationCodeResponseValue = await response.Content.ReadAsStringAsync();
                 dynamic invitationCodeResponse = JsonConvert.DeserializeObject(invitationCodeResponseValue);
-                var invitationCode = invitationCodeResponse?.invitationCode;
+                var invitationCode = (string)invitationCodeResponse?.invitationCode;
 
                 var authenticationRequestUrl = Url.Action("Register", "Account", null, "https" /* This forces an absolute URL */);
-                this.ViewData["CompanyId"] = companyId;
-                this.ViewData["InvitationCode"] = invitationCode;
-                this.ViewData["AuthenticationRequestUrl"] = authenticationRequestUrl;
-                return View(nameof(Invite));
+                var model = new AccountInvitationViewModel
+                {
+                    CanInviteUsingClientAssertion = !string.IsNullOrWhiteSpace(this.signingSecret),
+                    CanInviteUsingInvitationCode = !string.IsNullOrWhiteSpace(this.userInvitationApiUrl),
+                    CompanyId = companyId,
+                    AuthenticationRequestUrl = authenticationRequestUrl,
+                    InvitationCode = invitationCode
+                };
+                return View(nameof(Invite), model);
             }
             return RedirectToAction(nameof(Invite));
         }

@@ -139,19 +139,4 @@
     </ClaimsProvider>
   </ClaimsProviders>
 
-  <UserJourneys>
-    <UserJourney Id="Invitation">
-      <PreserveOriginalAssertion>false</PreserveOriginalAssertion>
-      <OrchestrationSteps>
-        <OrchestrationStep Order="1" Type="ClaimsExchange">
-          <ClaimsExchanges>
-            <ClaimsExchange Id="LocalAccountRegistrationExchange" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonEmail-Verified" />
-          </ClaimsExchanges>
-        </OrchestrationStep>
-        <OrchestrationStep Order="2" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
-      </OrchestrationSteps>
-      <ClientDefinition ReferenceId="DefaultWeb" />
-    </UserJourney>
-  </UserJourneys>
-
 </TrustFrameworkPolicy>

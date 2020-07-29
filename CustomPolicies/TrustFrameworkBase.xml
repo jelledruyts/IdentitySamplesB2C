@@ -312,6 +312,17 @@
         <UserHelpText/>
       </ClaimType>
 
+      <ClaimType Id="extension_companyId">
+        <DisplayName>Company ID</DisplayName>
+        <DataType>string</DataType>
+        <DefaultPartnerClaimTypes>
+          <Protocol Name="OAuth2" PartnerClaimType="companyId" />
+          <Protocol Name="OpenIdConnect" PartnerClaimType="companyId" />
+          <Protocol Name="SAML2" PartnerClaimType="http://schemas.identitysamplesb2c.onmicrosoft.com/identity/claims/companyId" />
+        </DefaultPartnerClaimTypes>
+        <UserHelpText/>
+      </ClaimType>
+
     </ClaimsSchema>
 
     <ClaimsTransformations>
@@ -667,6 +678,8 @@
             <!-- Optional claims. -->
             <PersistedClaim ClaimTypeReferenceId="givenName" />
             <PersistedClaim ClaimTypeReferenceId="surname" />
+            <PersistedClaim ClaimTypeReferenceId="extension_appRoles" />
+            <PersistedClaim ClaimTypeReferenceId="extension_companyId" />
           </PersistedClaims>
           <OutputClaims>
             <OutputClaim ClaimTypeReferenceId="objectId" />
@@ -767,6 +780,7 @@
             <OutputClaim ClaimTypeReferenceId="surname" />
             <OutputClaim ClaimTypeReferenceId="userPrincipalName" />
             <OutputClaim ClaimTypeReferenceId="extension_appRoles" />
+            <OutputClaim ClaimTypeReferenceId="extension_companyId" />
           </OutputClaims>
           <IncludeTechnicalProfile ReferenceId="AAD-Common" />
         </TechnicalProfile>
@@ -881,8 +895,6 @@
 
             <!-- Optional claims, to be collected from the user -->
             <OutputClaim ClaimTypeReferenceId="displayName" />
-            <OutputClaim ClaimTypeReferenceId="givenName" />
-            <OutputClaim ClaimTypeReferenceId="surName" />
           </OutputClaims>
           <ValidationTechnicalProfiles>
             <ValidationTechnicalProfile ReferenceId="AAD-UserWriteUsingLogonEmail" />

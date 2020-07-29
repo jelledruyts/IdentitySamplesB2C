@@ -75,7 +75,7 @@ namespace Sample.Functions
                     foreach (var element in requestDocument.RootElement.EnumerateObject())
                     {
                         log.LogInformation($"- {element.Name}: {element.Value.GetRawText()}");
-                        if (element.Name.EndsWith("_InvitationCode")) // E.g. "extension_bd88c9da63214d09b854af9cfbbf4b15_InvitationCode"
+                        if (element.Name.EndsWith("InvitationCode", StringComparison.InvariantCultureIgnoreCase)) // E.g. "extension_bd88c9da63214d09b854af9cfbbf4b15_InvitationCode"
                         {
                             invitationCode = element.Value.GetString();
                         }
@@ -97,13 +97,16 @@ namespace Sample.Functions
                     {
                         // The requested invitation code was not found in persistent storage.
                         log.LogWarning($"User invitation for invitation code \"{invitationCode}\" was not found.");
-                        return GetBlockPageApiResponse("UserInvitationRedemptionFailed-NotFound", "The invitation code you provided is invalid.");
+                        return GetValidationErrorApiResponse("UserInvitationRedemptionFailed-NotFound", "The invitation code you provided is invalid.");
                     }
                     else
                     {
                         // The requested invitation code was found in persistent storage, look up the pre-identified information.
                         log.LogInformation($"User invitation found for invitation code \"{invitationCode}\".");
                         var invitationCodeRequest = await JsonSerializer.DeserializeAsync<InvitationCodeRequest>(blobInputStream);
+
+                        // TODO: At this point, the blob can be deleted again.
+
                         return GetAllowApiResponse("UserInvitationRedemptionSucceeded", "The invitation code you provided is valid.", invitationCodeRequest.CompanyId);
                     }
                 }
@@ -122,7 +125,7 @@ namespace Sample.Functions
 
         private static IActionResult GetValidationErrorApiResponse(string code, string userMessage)
         {
-            return GetApiResponse("ValidationError", code, userMessage, 400, null);
+            return GetApiResponse("ValidationError", code, userMessage, 409, null);
         }
 
         private static IActionResult GetBlockPageApiResponse(string code, string userMessage)
@@ -134,11 +137,13 @@ namespace Sample.Functions
         {
             var body = new
             {
-                version = "1.0.0",
-                action = action,
-                code = code,
-                userMessage = userMessage,
-                extension_bd88c9da63214d09b854af9cfbbf4b15_CompanyId = companyId // Return a custom user attribute in its fully qualified form.
+                version = "1.0.0", // For both
+                status = statusCode, // For IEF REST profile
+                action = action, // For API Connectors
+                code = code, // For both
+                userMessage = userMessage, // For both
+                extension_companyId = companyId, // Return a custom user attribute in simplified form (without the Extension ID)
+                extension_bd88c9da63214d09b854af9cfbbf4b15_CompanyId = companyId // Return a custom user attribute in its fully qualified form (as required for API Connectors for now)
             };
             return new JsonResult(body) { StatusCode = statusCode };
         }

@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TrustFrameworkPolicy
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06"
+  PolicySchemaVersion="0.3.0.0"
+  TenantId="identitysamplesb2c.onmicrosoft.com"
+  PolicyId="B2C_1A_Sample_Client_InvitationCode"
+  PublicPolicyUri="http://identitysamplesb2c.onmicrosoft.com/B2C_1A_Sample_Client_InvitationCode"
+  DeploymentMode="Development"
+  UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights">
+
+  <BasePolicy>
+    <TenantId>identitysamplesb2c.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_TrustFrameworkExtensions</PolicyId>
+  </BasePolicy>
+
+  <BuildingBlocks>
+    <ClaimsSchema>
+      <!-- The following claim type stores the Invitation Code for a user (it's not persisted, and used only during this flow). -->
+      <ClaimType Id="extension_invitationCode">
+        <DisplayName>Invitation Code</DisplayName>
+        <DataType>string</DataType>
+        <DefaultPartnerClaimTypes>
+          <Protocol Name="OAuth2" PartnerClaimType="invitationCode" />
+          <Protocol Name="OpenIdConnect" PartnerClaimType="invitationCode" />
+          <Protocol Name="SAML2" PartnerClaimType="http://schemas.identitysamplesb2c.onmicrosoft.com/identity/claims/invitationCode" />
+        </DefaultPartnerClaimTypes>
+        <UserHelpText>The invitation code you received which allows you to sign up.</UserHelpText>
+        <UserInputType>TextBox</UserInputType>
+      </ClaimType>
+    </ClaimsSchema>
+  </BuildingBlocks>
+
+  <ClaimsProviders>
+    <ClaimsProvider>
+      <DisplayName>Invitation Code Technical Profiles</DisplayName>
+      <TechnicalProfiles>
+        <!-- This technical profile collects the invitation code from the user. -->
+        <TechnicalProfile Id="CollectInvitationCode">
+          <DisplayName>Collect invitation code</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.SelfAssertedAttributeProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
+          <Metadata>
+            <Item Key="IpAddressClaimReferenceId">IpAddress</Item>
+            <Item Key="ContentDefinitionReferenceId">api.localaccountsignup</Item>
+            <Item Key="language.button_continue">Continue</Item>
+          </Metadata>
+          <DisplayClaims>
+            <DisplayClaim ClaimTypeReferenceId="extension_invitationCode" Required="true" />
+          </DisplayClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="extension_invitationCode" />
+            <!--
+              The validation technical profile will redeem the invitation code and return other information about
+              the user (their Company ID here) which will then be persisted as part of the user object.
+            -->
+            <OutputClaim ClaimTypeReferenceId="extension_companyId" />
+          </OutputClaims>
+          <ValidationTechnicalProfiles>
+            <ValidationTechnicalProfile ReferenceId="REST-RedeemInvitationCode" />
+          </ValidationTechnicalProfiles>
+        </TechnicalProfile>
+        <!-- This technical profile calls a REST API to redeem the invitation code and return user information. -->
+        <TechnicalProfile Id="REST-RedeemInvitationCode">
+          <DisplayName>Redeem Invitation Code</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.RestfulProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
+          <Metadata>
+            <Item Key="ServiceUrl">https://identitysamplesb2c-api.azurewebsites.net/api/RedeemInvitationCode?code=sCul24P3TW5eM4wdzgcDel0Gvxiqttb/nlk5VZOMg05vwL0xtU2/Lg==</Item>
+            <Item Key="AuthenticationType">None</Item>
+            <Item Key="SendClaimsIn">Body</Item>
+            <Item Key="IncludeClaimResolvingInClaimsHandling">true</Item>
+          </Metadata>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="extension_invitationCode" PartnerClaimType="invitationCode" />
+          </InputClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="extension_companyId" PartnerClaimType="extension_companyId" />
+          </OutputClaims>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+  </ClaimsProviders>
+
+  <UserJourneys>
+    <UserJourney Id="InvitationCode">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="GetInvitationCodeClaimsExchange" TechnicalProfileReferenceId="CollectInvitationCode" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="SignUpWithLogonEmailExchange" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonEmail" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="3" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+  </UserJourneys>
+
+  <!-- The following policy is used for a sign-up policy that calls a REST API for claims exchange to redeem an invitation code. -->
+  <RelyingParty>
+    <DefaultUserJourney ReferenceId="InvitationCode" />
+    <UserJourneyBehaviors>
+      <JourneyInsights TelemetryEngine="ApplicationInsights" InstrumentationKey="c35111c3-32e3-4736-b9fe-585ce1ff8aae" DeveloperMode="true" ClientEnabled="false" ServerEnabled="true" TelemetryVersion="1.0.0" />
+    </UserJourneyBehaviors>
+    <TechnicalProfile Id="PolicyProfile">
+      <DisplayName>PolicyProfile</DisplayName>
+      <Protocol Name="OpenIdConnect" />
+      <OutputClaims>
+        <OutputClaim ClaimTypeReferenceId="displayName" />
+        <OutputClaim ClaimTypeReferenceId="email" />
+        <OutputClaim ClaimTypeReferenceId="objectId" PartnerClaimType="sub"/>
+        <OutputClaim ClaimTypeReferenceId="extension_companyId" PartnerClaimType="companyId"/>
+        <OutputClaim ClaimTypeReferenceId="extension_invitationCode" PartnerClaimType="invitationCode"/>
+        <OutputClaim ClaimTypeReferenceId="tenantId" AlwaysUseDefaultValue="true" DefaultValue="{Policy:TenantObjectId}" />
+      </OutputClaims>
+      <SubjectNamingInfo ClaimType="sub" />
+    </TechnicalProfile>
+  </RelyingParty>
+</TrustFrameworkPolicy>
