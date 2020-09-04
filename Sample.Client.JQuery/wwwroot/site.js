@@ -2,57 +2,55 @@
 
 var Sample = (function ($) {
     var appConfig = {
-        // Note: the scopes below are cloned before passing them along to MSAL (using the "slice" function)
-        // because MSAL will append the "openid" and "profile" scopes to the array when signing in.
-        // When then requesting a token with the same scopes array, these additional scopes will result in a token
-        // cache lookup failing and a full request being done against AAD B2C to get a new token every time.
         scopes: [
             "https://identitysamplesb2c.onmicrosoft.com/sample-api/user_impersonation",
             "https://identitysamplesb2c.onmicrosoft.com/sample-api/Identity.Read",
-            "https://identitysamplesb2c.onmicrosoft.com/sample-api/Identity.ReadWrite"
+            "https://identitysamplesb2c.onmicrosoft.com/sample-api/Identity.ReadWrite",
+            "offline_access" // Required for now (see https://github.com/AzureAD/microsoft-authentication-library-for-js/issues/1999)
         ],
         sampleApiRootUrl: "https://localhost:5003/",
+        b2cTenantName: "identitysamplesb2c",
+        b2cClientId: "21f0f8bf-c9fa-441f-bc80-020ddf4f7c15",
         signUpSignInPolicyId: "B2C_1_Sample_Client_SignUpOrIn",
         editProfilePolicyId: "B2C_1_Sample_Client_EditProfile",
     };
     var msalConfig = {
         auth: {
-            clientId: "21f0f8bf-c9fa-441f-bc80-020ddf4f7c15",
-            authority: "https://identitysamplesb2c.b2clogin.com/tfp/identitysamplesb2c.onmicrosoft.com/B2C_1_Sample_Client_SignUpOrIn/v2.0/",
-            validateAuthority: false
+            clientId: appConfig.b2cClientId,
+            authority: `https://${appConfig.b2cTenantName}.b2clogin.com/${appConfig.b2cTenantName}.onmicrosoft.com/${appConfig.signUpSignInPolicyId}`,
+            knownAuthorities: [ `${appConfig.b2cTenantName}.b2clogin.com` ]
         },
         system: {
-            logger: new Msal.Logger(
-                function loggerCallback(logLevel, message, containsPii) {
-                    console.log("[MSAL] " + message);
-                }, {
-                    level: Msal.LogLevel.Verbose,
-                    piiLoggingEnabled: true
-                }
-            )
+            loggerOptions: {
+                loggerCallback: function (level, message, containsPii) {
+                    switch (level) {
+                        case 0 /*LogLevel.Error*/:
+                            console.error("[MSAL] " + message);
+                            return;
+                        case 2 /*LogLevel.Info*/:
+                            console.info("[MSAL] " + message);
+                            return;
+                        case 3 /*LogLevel.Verbose*/:
+                            console.debug("[MSAL] " + message);
+                            return;
+                        case 1 /*LogLevel.Warning*/:
+                            console.warn("[MSAL] " + message);
+                            return;
+                    }
+                },
+                piiLoggingEnabled: true,
+                logLevel: 3 /*LogLevel.Verbose*/
+            }
         },
         cache: {
             cacheLocation: "localStorage",
             storeAuthStateInCookie: true
         }
     };
-    var clientApplication = new Msal.UserAgentApplication(msalConfig);
-
-    // Keep a global reference to the account as seen after the initial login, so it can
-    // be passed to the acquireTokenSilent function for proper account lookup.
-    // This is a workaround for the fact that when performing an additional user flow (B2C policy)
-    // such as a profile editing flow after initial sign-in, MSAL will not correctly retrieve
-    // the access token anymore due to an account identifier mismatch.
-    // In fact, upon returning from B2C, MSAL will construct a new home account identifier
-    // ("account.homeAccountIdentifier") based on the "client_info" parameter returned from B2C,
-    // and in B2C the "client_info.uid" component includes the policy id that was just executed.
-    // Therefore, the new account object seen by MSAL will have a different homeAccountIdentifier
-    // than the one that was used to construct the local cache, and any access tokens are not
-    // properly returned.
-    var globalAccount = null;
+    var clientApplication = new msal.PublicClientApplication(msalConfig);
 
     var performSignIn = function (policyId) {
-        clientApplication.loginPopup({ scopes: appConfig.scopes.slice(0), extraQueryParameters: { p: policyId } })
+        clientApplication.loginPopup({ authority: `https://${appConfig.b2cTenantName}.b2clogin.com/${appConfig.b2cTenantName}.onmicrosoft.com/${policyId}`, scopes: appConfig.scopes })
             .then(function (loginResponse) {
                 updateUI();
             }).catch(function (error) {
@@ -60,8 +58,17 @@ var Sample = (function ($) {
             });
     }
 
+    var getAccount = function() {
+        var accounts = clientApplication.getAllAccounts();
+        if (!accounts || accounts.length === 0) {
+            return null;
+        } else {
+            return accounts[0];
+        }
+    }
+
     var ensureSignedIn = function () {
-        if (!clientApplication.getAccount()) {
+        if (!getAccount()) {
             performSignIn(appConfig.signUpSignInPolicyId);
         }
     };
@@ -71,20 +78,15 @@ var Sample = (function ($) {
     };
 
     var updateUI = function () {
-        var account = clientApplication.getAccount();
-        if (globalAccount === null) {
-            // Only set the global account reference once after initial sign-in (see above).
-            globalAccount = account;
-        }
+        var account = getAccount();
         if (account) {
             $("#signInLink").hide();
-            $("#editProfileLink").text("Hello " + account.name + "!");
+            $("#editProfileLink").text("Hello " + account.username + "!");
             $("#editProfileLink").show();
             $("#signOutLink").show();
             $("#identityInfoPanel").show();
         } else {
             $("#signInLink").show();
-            $("#userNameText").hide();
             $("#editProfileLink").hide();
             $("#signOutLink").hide();
             $("#identityInfoPanel").hide();
@@ -114,13 +116,11 @@ var Sample = (function ($) {
 
         ensureSignedIn();
 
-        // Pass in the (original) global account, not the "current" account in MSAL as this may have
-        // an incorrect "homeAccountIdentifier" resulting in the access token becoming null (see above).
-        clientApplication.acquireTokenSilent({ scopes: appConfig.scopes.slice(0), account: globalAccount }).then(function (accessTokenResponse) {
+        clientApplication.acquireTokenSilent({ scopes: appConfig.scopes, account: getAccount() }).then(function (accessTokenResponse) {
             getIdentityInfoFromWebApi(accessTokenResponse.accessToken);
         }).catch(function (error) {
             if (error.name === "InteractionRequiredAuthError") {
-                clientApplication.acquireTokenPopup({ scopes: appConfig.scopes.slice(0) }).then(function (accessTokenResponse) {
+                clientApplication.acquireTokenPopup({ scopes: appConfig.scopes, account: getAccount() }).then(function (accessTokenResponse) {
                     getIdentityInfoFromWebApi(accessTokenResponse.accessToken);
                 }).catch(function (error) {
                     alert("Could not acquire token: " + error);
