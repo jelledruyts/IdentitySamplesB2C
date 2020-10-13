@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text.Json;
@@ -107,7 +108,7 @@ namespace Sample.Functions
 
                         // TODO: At this point, the blob can be deleted again.
 
-                        return GetAllowApiResponse("UserInvitationRedemptionSucceeded", "The invitation code you provided is valid.", invitationCodeRequest.CompanyId);
+                        return GetContinueApiResponse("UserInvitationRedemptionSucceeded", "The invitation code you provided is valid.", invitationCodeRequest.CompanyId);
                     }
                 }
             }
@@ -118,14 +119,14 @@ namespace Sample.Functions
             }
         }
 
-        private static IActionResult GetAllowApiResponse(string code, string userMessage, string companyId)
+        private static IActionResult GetContinueApiResponse(string code, string userMessage, string companyId)
         {
-            return GetApiResponse("Allow", code, userMessage, 200, companyId);
+            return GetApiResponse("Continue", code, userMessage, 200, companyId);
         }
 
         private static IActionResult GetValidationErrorApiResponse(string code, string userMessage)
         {
-            return GetApiResponse("ValidationError", code, userMessage, 409, null);
+            return GetApiResponse("ValidationError", code, userMessage, 400, null);
         }
 
         private static IActionResult GetBlockPageApiResponse(string code, string userMessage)
@@ -135,17 +136,18 @@ namespace Sample.Functions
 
         private static IActionResult GetApiResponse(string action, string code, string userMessage, int statusCode, string companyId)
         {
-            var body = new
+            // TODO: Get the extension id from a query parameter so it doesn't have to be hard-coded.
+            var responseProperties = new Dictionary<string, object>
             {
-                version = "1.0.0", // For both
-                status = statusCode, // For IEF REST profile
-                action = action, // For API Connectors
-                code = code, // For both
-                userMessage = userMessage, // For both
-                extension_companyId = companyId, // Return a custom user attribute in simplified form (without the Extension ID)
-                extension_bd88c9da63214d09b854af9cfbbf4b15_CompanyId = companyId // Return a custom user attribute in its fully qualified form (as required for API Connectors for now)
+                { "version", "1.0.0" }, // For both
+                { "status", statusCode }, // For both
+                { "action", action }, // For API Connectors
+                { "code", code }, // For IEF REST profile
+                { "userMessage", userMessage }, // For both
+                { "extension_CompanyId", companyId }, // Return a custom user attribute in simplified form (without the Extension ID)
+                { "extension_bd88c9da63214d09b854af9cfbbf4b15_CompanyId", companyId } // Return a custom user attribute in its fully qualified form (as required for API Connectors for now)
             };
-            return new JsonResult(body) { StatusCode = statusCode };
+            return new JsonResult(responseProperties) { StatusCode = statusCode };
         }
     }
 }

@@ -301,18 +301,8 @@
         <UserInputType>TextBox</UserInputType>
       </ClaimType>
 
-      <ClaimType Id="extension_appRoles">
-        <DisplayName>App Roles</DisplayName>
-        <DataType>string</DataType>
-        <DefaultPartnerClaimTypes>
-          <Protocol Name="OAuth2" PartnerClaimType="roles" />
-          <Protocol Name="OpenIdConnect" PartnerClaimType="roles" />
-          <Protocol Name="SAML2" PartnerClaimType="http://schemas.microsoft.com/ws/2008/06/identity/claims/role" />
-        </DefaultPartnerClaimTypes>
-        <UserHelpText/>
-      </ClaimType>
 
-      <ClaimType Id="extension_companyId">
+      <ClaimType Id="extension_CompanyId">
         <DisplayName>Company ID</DisplayName>
         <DataType>string</DataType>
         <DefaultPartnerClaimTypes>
@@ -678,8 +668,7 @@
             <!-- Optional claims. -->
             <PersistedClaim ClaimTypeReferenceId="givenName" />
             <PersistedClaim ClaimTypeReferenceId="surname" />
-            <PersistedClaim ClaimTypeReferenceId="extension_appRoles" />
-            <PersistedClaim ClaimTypeReferenceId="extension_companyId" />
+            <PersistedClaim ClaimTypeReferenceId="extension_CompanyId" />
           </PersistedClaims>
           <OutputClaims>
             <OutputClaim ClaimTypeReferenceId="objectId" />
@@ -779,8 +768,7 @@
             <OutputClaim ClaimTypeReferenceId="givenName" />
             <OutputClaim ClaimTypeReferenceId="surname" />
             <OutputClaim ClaimTypeReferenceId="userPrincipalName" />
-            <OutputClaim ClaimTypeReferenceId="extension_appRoles" />
-            <OutputClaim ClaimTypeReferenceId="extension_companyId" />
+            <OutputClaim ClaimTypeReferenceId="extension_CompanyId" />
           </OutputClaims>
           <IncludeTechnicalProfile ReferenceId="AAD-Common" />
         </TechnicalProfile>

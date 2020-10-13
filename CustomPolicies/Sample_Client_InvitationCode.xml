@@ -18,7 +18,7 @@
   <BuildingBlocks>
     <ClaimsSchema>
       <!-- The following claim type stores the Invitation Code for a user (it's not persisted, and used only during this flow). -->
-      <ClaimType Id="extension_invitationCode">
+      <ClaimType Id="extension_InvitationCode">
         <DisplayName>Invitation Code</DisplayName>
         <DataType>string</DataType>
         <DefaultPartnerClaimTypes>
@@ -46,15 +46,15 @@
             <Item Key="language.button_continue">Continue</Item>
           </Metadata>
           <DisplayClaims>
-            <DisplayClaim ClaimTypeReferenceId="extension_invitationCode" Required="true" />
+            <DisplayClaim ClaimTypeReferenceId="extension_InvitationCode" Required="true" />
           </DisplayClaims>
           <OutputClaims>
-            <OutputClaim ClaimTypeReferenceId="extension_invitationCode" />
+            <OutputClaim ClaimTypeReferenceId="extension_InvitationCode" />
             <!--
               The validation technical profile will redeem the invitation code and return other information about
               the user (their Company ID here) which will then be persisted as part of the user object.
             -->
-            <OutputClaim ClaimTypeReferenceId="extension_companyId" />
+            <OutputClaim ClaimTypeReferenceId="extension_CompanyId" />
           </OutputClaims>
           <ValidationTechnicalProfiles>
             <ValidationTechnicalProfile ReferenceId="REST-RedeemInvitationCode" />
@@ -71,10 +71,10 @@
             <Item Key="IncludeClaimResolvingInClaimsHandling">true</Item>
           </Metadata>
           <InputClaims>
-            <InputClaim ClaimTypeReferenceId="extension_invitationCode" PartnerClaimType="invitationCode" />
+            <InputClaim ClaimTypeReferenceId="extension_InvitationCode" PartnerClaimType="invitationCode" />
           </InputClaims>
           <OutputClaims>
-            <OutputClaim ClaimTypeReferenceId="extension_companyId" PartnerClaimType="extension_companyId" />
+            <OutputClaim ClaimTypeReferenceId="extension_CompanyId" PartnerClaimType="extension_CompanyId" />
           </OutputClaims>
         </TechnicalProfile>
       </TechnicalProfiles>
@@ -113,8 +113,8 @@
         <OutputClaim ClaimTypeReferenceId="displayName" />
         <OutputClaim ClaimTypeReferenceId="email" />
         <OutputClaim ClaimTypeReferenceId="objectId" PartnerClaimType="sub"/>
-        <OutputClaim ClaimTypeReferenceId="extension_companyId" PartnerClaimType="companyId"/>
-        <OutputClaim ClaimTypeReferenceId="extension_invitationCode" PartnerClaimType="invitationCode"/>
+        <OutputClaim ClaimTypeReferenceId="extension_CompanyId" PartnerClaimType="companyId"/>
+        <OutputClaim ClaimTypeReferenceId="extension_InvitationCode" PartnerClaimType="invitationCode"/>
         <OutputClaim ClaimTypeReferenceId="tenantId" AlwaysUseDefaultValue="true" DefaultValue="{Policy:TenantObjectId}" />
       </OutputClaims>
       <SubjectNamingInfo ClaimType="sub" />

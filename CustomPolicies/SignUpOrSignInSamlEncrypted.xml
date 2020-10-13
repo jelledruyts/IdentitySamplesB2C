@@ -50,7 +50,6 @@
         <OutputClaim ClaimTypeReferenceId="identityProvider" DefaultValue="" />
         <OutputClaim ClaimTypeReferenceId="objectId" PartnerClaimType="objectId"/>
         <OutputClaim ClaimTypeReferenceId="userPrincipalName" />
-        <OutputClaim ClaimTypeReferenceId="extension_appRoles" />
       </OutputClaims>
       <SubjectNamingInfo ClaimType="objectId" ExcludeAsClaim="true" />
     </TechnicalProfile>
