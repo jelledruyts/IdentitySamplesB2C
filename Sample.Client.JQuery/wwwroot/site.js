@@ -5,8 +5,7 @@ var Sample = (function ($) {
         scopes: [
             "https://identitysamplesb2c.onmicrosoft.com/sample-api/user_impersonation",
             "https://identitysamplesb2c.onmicrosoft.com/sample-api/Identity.Read",
-            "https://identitysamplesb2c.onmicrosoft.com/sample-api/Identity.ReadWrite",
-            "offline_access" // Required for now (see https://github.com/AzureAD/microsoft-authentication-library-for-js/issues/1999)
+            "https://identitysamplesb2c.onmicrosoft.com/sample-api/Identity.ReadWrite"
         ],
         sampleApiRootUrl: "https://localhost:5003/",
         b2cTenantName: "identitysamplesb2c",
