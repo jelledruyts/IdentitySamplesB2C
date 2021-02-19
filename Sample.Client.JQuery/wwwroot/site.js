@@ -12,12 +12,14 @@ var Sample = (function ($) {
         b2cClientId: "21f0f8bf-c9fa-441f-bc80-020ddf4f7c15",
         signUpSignInPolicyId: "B2C_1_Sample_Client_SignUpOrIn",
         editProfilePolicyId: "B2C_1_Sample_Client_EditProfile",
+        loginInteractionType: "popup", // Can be "popup" or "redirect"
+        forceSignIn: false // Always triggers a sign-in (no explicit sign-in user action needed)
     };
     var msalConfig = {
         auth: {
             clientId: appConfig.b2cClientId,
             authority: `https://${appConfig.b2cTenantName}.b2clogin.com/${appConfig.b2cTenantName}.onmicrosoft.com/${appConfig.signUpSignInPolicyId}`,
-            knownAuthorities: [ `${appConfig.b2cTenantName}.b2clogin.com` ]
+            knownAuthorities: [`${appConfig.b2cTenantName}.b2clogin.com`]
         },
         system: {
             loggerOptions: {
@@ -49,15 +51,26 @@ var Sample = (function ($) {
     var clientApplication = new msal.PublicClientApplication(msalConfig);
 
     var performSignIn = function (policyId) {
-        clientApplication.loginPopup({ authority: `https://${appConfig.b2cTenantName}.b2clogin.com/${appConfig.b2cTenantName}.onmicrosoft.com/${policyId}`, scopes: appConfig.scopes })
-            .then(function (loginResponse) {
-                updateUI();
-            }).catch(function (error) {
-                alert("Could not sign in: " + error);
-            });
+        var loginRequest = {
+            authority: `https://${appConfig.b2cTenantName}.b2clogin.com/${appConfig.b2cTenantName}.onmicrosoft.com/${policyId}`,
+            scopes: appConfig.scopes
+        };
+        if (appConfig.loginInteractionType === 'redirect') {
+            clientApplication.loginRedirect(loginRequest)
+                .catch(function (error) {
+                    alert("Could not sign in: " + error);
+                });
+        } else {
+            clientApplication.loginPopup(loginRequest)
+                .then(function (loginResponse) {
+                    updateUI();
+                }).catch(function (error) {
+                    alert("Could not sign in: " + error);
+                });
+        }
     }
 
-    var getAccount = function() {
+    var getAccount = function () {
         var accounts = clientApplication.getAllAccounts();
         if (!accounts || accounts.length === 0) {
             return null;
@@ -146,6 +159,28 @@ var Sample = (function ($) {
             event.preventDefault();
             getIdentityInfo();
         });
+
+        if (appConfig.loginInteractionType === 'redirect') {
+            // Handle the redirect flows
+            clientApplication.handleRedirectPromise().then((tokenResponse) => {
+                if (tokenResponse === null) {
+                    // Not coming back from an authentication request.
+                    if (appConfig.forceSignIn) {
+                        ensureSignedIn();
+                    }
+                } else {
+                    // Coming back from an authentication request, update the UI.
+                    updateUI();
+                }
+            }).catch((error) => {
+                alert("Could not sign in: " + error);
+            });
+        } else {
+            if (appConfig.forceSignIn) {
+                ensureSignedIn();
+            }
+        }
+
         updateUI();
     };
 
