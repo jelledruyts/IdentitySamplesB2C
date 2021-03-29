@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TrustFrameworkPolicy
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06"
+  PolicySchemaVersion="0.3.0.0"
+  TenantId="identitysamplesb2c.onmicrosoft.com"
+  PolicyId="B2C_1A_Anonymous"
+  PublicPolicyUri="http://identitysamplesb2c.onmicrosoft.com/B2C_1A_Anonymous"
+  DeploymentMode="Development"
+  UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights">
+
+  <!--
+      This is an example custom policy which allows anonymous access (!) and returns a token with
+      some self-asserted information, in this case an "anonymousId" as provided by the client.
+      
+      This can be useful for example for API's that require access tokens issued by the same
+      identity provider as regular app/user access, but in this case extended to clients which
+      have no signed in user, e.g. for users of an e-commerce store who have not yet signed up
+      but are already adding items to their shopping cart. Each such user would be identified
+      with a sort of session identifier, the "anonymousId" in this case. This allows the API
+      to persist information of the client for the logical session, and then transferring it to
+      the actual user account once they sign up/in.
+      
+      At a technical level, the self-asserted information can be provided in different ways:
+
+      - Via an incoming "id_token_hint"
+          This implies a client capable of requesting or generating a fully valid JWT token containing the
+          self-asserted claim values. It also requires some cryptographic signing keys (symmetric or asymmetric)
+          so that AAD B2C can verify the integrity of the id_token_hint. These keys must be kept secure so
+          this approach is only useful in server-side scenarios (e.g. a web application which uses a server-side
+          session to interact with AAD B2C, while the anonymous browser user is identified by a session cookie).
+          See https://docs.microsoft.com/en-us/azure/active-directory-b2c/id-token-hint.
+      - Via a request query string parameter as part of an OIDC or OAuth 2.0 request
+          This requires no specific cryptography and is easier to work with from the client perspective. If
+          the client is a public client (e.g. a mobile app on an end user device), it cannot be trusted to keep
+          secrets anyway, so this approach is simpler than using "id_token_hint".
+          See https://docs.microsoft.com/en-us/azure/active-directory-b2c/claim-resolver-overview#oauth2-key-value-parameters.
+      
+      This sample policy uses the query string approach for simplicity. To use this policy, invoke an OIDC request
+      as usual, but include the "anonymousId=<value>" query string parameter, which then gets reflected back into the token
+      as the Subject ("sub") claim.
+  -->
+
+  <BasePolicy>
+    <TenantId>identitysamplesb2c.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_TrustFrameworkBase</PolicyId>
+  </BasePolicy>
+  
+  <BuildingBlocks>
+    <ClaimsSchema>
+      <!-- The following claim type stores the anonymous ID for a client (it's not persisted, and used only during this flow). -->
+      <ClaimType Id="anonymousId">
+        <DisplayName>Anonymous ID</DisplayName>
+        <DataType>string</DataType>
+        <DefaultPartnerClaimTypes>
+          <Protocol Name="OAuth2" PartnerClaimType="anonymousId" />
+          <Protocol Name="OpenIdConnect" PartnerClaimType="anonymousId" />
+          <Protocol Name="SAML2" PartnerClaimType="http://schemas.identitysamplesb2c.onmicrosoft.com/identity/claims/anonymousId" />
+        </DefaultPartnerClaimTypes>
+        <UserHelpText>The self-asserted anonymous identifier of the client.</UserHelpText>
+        <UserInputType>TextBox</UserInputType>
+      </ClaimType>
+    </ClaimsSchema>
+  </BuildingBlocks>
+
+  <ClaimsProviders>
+    <ClaimsProvider>
+      <DisplayName>Define claims</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="DefineClaims">
+          <DisplayName>Define claims</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.ClaimsTransformationProtocolProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
+          <Metadata>
+            <!-- Allows usage of claim resolvers like {OAUTH-KV:...} -->
+            <Item Key="IncludeClaimResolvingInClaimsHandling">true</Item>
+          </Metadata>
+          <OutputClaims>
+            <!-- The subject claim is set to the self-asserted Anonymous ID coming from the query string -->
+            <OutputClaim ClaimTypeReferenceId="sub" DefaultValue="{OAUTH-KV:anonymousId}" AlwaysUseDefaultValue="true" />
+            <!-- Additional claims can pass more context, e.g. a scope claim to indicate this token is granted (only) anonymous access -->
+            <OutputClaim ClaimTypeReferenceId="scope" DefaultValue="anonymous_access" AlwaysUseDefaultValue="true" />
+          </OutputClaims>
+          <UseTechnicalProfileForSessionManagement ReferenceId="SM-Noop" />
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+  </ClaimsProviders>
+
+  <UserJourneys>
+    <UserJourney Id="AnonymousJourney">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="DefineClaims" TechnicalProfileReferenceId="DefineClaims" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+    </UserJourney>
+  </UserJourneys>
+
+  <RelyingParty>
+    <DefaultUserJourney ReferenceId="AnonymousJourney" />
+    <TechnicalProfile Id="AnonymousPolicyProfile">
+      <DisplayName>Anonymous Policy Profile</DisplayName>
+      <Protocol Name="OpenIdConnect" />
+      <OutputClaims>
+        <OutputClaim ClaimTypeReferenceId="sub" />
+        <OutputClaim ClaimTypeReferenceId="scope" />
+      </OutputClaims>
+      <SubjectNamingInfo ClaimType="sub" />
+    </TechnicalProfile>
+  </RelyingParty>
+</TrustFrameworkPolicy>
