@@ -120,9 +120,6 @@
             <!-- The issuer contains the policy name; it should be the same name as configured in the relying party application. -->
             <!-- If you don't specify the IssuerUri then you get a default one, e.g. "https://login.microsoftonline.com/te/identitysamplesb2c.onmicrosoft.com/B2C_1A_TrustFrameworkBase" -->
             <Item Key="IssuerUri">https://identitysamplesb2c.b2clogin.com/identitysamplesb2c.onmicrosoft.com/B2C_1A_SignUpOrSignInSaml</Item>
-            <!-- Allow IdP-initiated flows -->
-            <!-- See https://docs.microsoft.com/en-us/azure/active-directory-b2c/saml-service-provider-options?pivots=b2c-custom-policy#identity-provider-initiated-flow -->
-            <Item Key="IdpInitiatedProfileEnabled">true</Item>
           </Metadata>
           <CryptographicKeys>
             <Key Id="MetadataSigning" StorageReferenceId="B2C_1A_SamlAppB2C" />

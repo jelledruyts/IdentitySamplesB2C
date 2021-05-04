@@ -33,6 +33,11 @@
     <TechnicalProfile Id="PolicyProfile">
       <DisplayName>PolicyProfile</DisplayName>
       <Protocol Name="SAML2"/>
+      <Metadata>
+        <!-- Allow IdP-initiated flows -->
+        <!-- See https://docs.microsoft.com/en-us/azure/active-directory-b2c/saml-service-provider-options?pivots=b2c-custom-policy#identity-provider-initiated-flow -->
+        <Item Key="IdpInitiatedProfileEnabled">true</Item>
+      </Metadata>
       <OutputClaims>
         <OutputClaim ClaimTypeReferenceId="displayName" />
         <OutputClaim ClaimTypeReferenceId="givenName" />
