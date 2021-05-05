@@ -1025,9 +1025,10 @@
     <ClaimsProvider>
       <DisplayName>Token Issuer</DisplayName>
       <TechnicalProfiles>
+        <!-- JWT Token Issuer -->
         <TechnicalProfile Id="JwtIssuer">
           <DisplayName>JWT Issuer</DisplayName>
-          <Protocol Name="None" />
+          <Protocol Name="OpenIdConnect" />
           <OutputTokenFormat>JWT</OutputTokenFormat>
           <Metadata>
             <Item Key="client_id">{service:te}</Item>
@@ -1040,6 +1041,12 @@
           </CryptographicKeys>
           <InputClaims />
           <OutputClaims />
+          <UseTechnicalProfileForSessionManagement ReferenceId="SM-OAuth-issuer" />
+        </TechnicalProfile>
+        <!-- Session management technical profile for OIDC based tokens -->
+        <TechnicalProfile Id="SM-OAuth-issuer">
+          <DisplayName>Session Management Provider</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.SSO.OAuthSSOSessionProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
         </TechnicalProfile>
       </TechnicalProfiles>
     </ClaimsProvider>
