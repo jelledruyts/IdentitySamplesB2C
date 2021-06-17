@@ -70,8 +70,12 @@ namespace Sample.Functions
                 log.LogInformation("An invitation code is being redeemed.");
                 // Look up the invitation code in the incoming request.
                 var invitationCode = default(string);
-                using (var requestDocument = await JsonDocument.ParseAsync(request.Body))
+                using (var reader = new StreamReader(request.Body))
                 {
+                    var requestBody = await reader.ReadToEndAsync();
+                    log.LogInformation("Request body:");
+                    log.LogInformation(requestBody);
+                    var requestDocument = JsonDocument.Parse(requestBody);
                     log.LogInformation("Request properties:");
                     foreach (var element in requestDocument.RootElement.EnumerateObject())
                     {
@@ -119,6 +123,37 @@ namespace Sample.Functions
             }
         }
 
+        [FunctionName(nameof(Debug))]
+        public static async Task<IActionResult> Debug(
+            [HttpTrigger(AuthorizationLevel.Function, WebRequestMethods.Http.Post)] HttpRequest request,
+            IBinder binder,
+            ILogger log)
+        {
+            try
+            {
+                log.LogInformation("A debug request was received.");
+                using (var reader = new StreamReader(request.Body))
+                {
+                    var requestBody = await reader.ReadToEndAsync();
+                    log.LogInformation("Request body:");
+                    log.LogInformation(requestBody);
+                    var requestDocument = JsonDocument.Parse(requestBody);
+                    log.LogInformation("Request properties:");
+                    foreach (var element in requestDocument.RootElement.EnumerateObject())
+                    {
+                        log.LogInformation($"- {element.Name}: {element.Value.GetRawText()}");
+                    }
+                }
+
+                return GetContinueApiResponse("Debug-Succeeded", "Success", null);
+            }
+            catch (Exception exc)
+            {
+                log.LogError(exc, "Error while processing request body: " + exc.ToString());
+                return GetBlockPageApiResponse("Debug-InternalError", "An error occurred while validating your invitation code, please try again later.");
+            }
+        }
+
         private static IActionResult GetContinueApiResponse(string code, string userMessage, string companyId)
         {
             return GetApiResponse("Continue", code, userMessage, 200, companyId);
@@ -136,17 +171,19 @@ namespace Sample.Functions
 
         private static IActionResult GetApiResponse(string action, string code, string userMessage, int statusCode, string companyId)
         {
-            // TODO: Get the extension id from a query parameter so it doesn't have to be hard-coded.
             var responseProperties = new Dictionary<string, object>
             {
                 { "version", "1.0.0" }, // For both
                 { "status", statusCode }, // For both
                 { "action", action }, // For API Connectors
                 { "code", code }, // For IEF REST profile
-                { "userMessage", userMessage }, // For both
-                { "extension_CompanyId", companyId }, // Return a custom user attribute in simplified form (without the Extension ID)
-                { "extension_bd88c9da63214d09b854af9cfbbf4b15_CompanyId", companyId } // Return a custom user attribute in its fully qualified form (as required for API Connectors for now)
+                { "userMessage", userMessage } // For both
             };
+            if (companyId != null)
+            {
+                // Return a custom user attribute in simplified form (without the Extension ID)
+                responseProperties["extension_CompanyId"] = companyId;
+            }
             return new JsonResult(responseProperties) { StatusCode = statusCode };
         }
     }
