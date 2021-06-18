@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text.Json;
@@ -68,22 +67,20 @@ namespace Sample.Functions
             try
             {
                 log.LogInformation("An invitation code is being redeemed.");
-                // Look up the invitation code in the incoming request.
+
+                // Parse and log the incoming request.
+                var requestDocument = await ApiConnectorHelper.GetRequestJsonAsync(request, log);
+
+                // Look up the invitation code in the incoming request. The element name depends on the
+                // extension App ID (e.g. "extension_bd88c9da63214d09b854af9cfbbf4b15_InvitationCode")
+                // so to avoid hard-coding this or making it configurable, we just check if the element
+                // name ends with the custom attribute name.
                 var invitationCode = default(string);
-                using (var reader = new StreamReader(request.Body))
+                foreach (var element in requestDocument.RootElement.EnumerateObject())
                 {
-                    var requestBody = await reader.ReadToEndAsync();
-                    log.LogInformation("Request body:");
-                    log.LogInformation(requestBody);
-                    var requestDocument = JsonDocument.Parse(requestBody);
-                    log.LogInformation("Request properties:");
-                    foreach (var element in requestDocument.RootElement.EnumerateObject())
+                    if (element.Name.EndsWith("InvitationCode", StringComparison.InvariantCultureIgnoreCase)) // E.g. "extension_bd88c9da63214d09b854af9cfbbf4b15_InvitationCode"
                     {
-                        log.LogInformation($"- {element.Name}: {element.Value.GetRawText()}");
-                        if (element.Name.EndsWith("InvitationCode", StringComparison.InvariantCultureIgnoreCase)) // E.g. "extension_bd88c9da63214d09b854af9cfbbf4b15_InvitationCode"
-                        {
-                            invitationCode = element.Value.GetString();
-                        }
+                        invitationCode = element.Value.GetString();
                     }
                 }
 
@@ -91,7 +88,7 @@ namespace Sample.Functions
                 {
                     // No invitation code was found in the request or it was too short, return a validation error.
                     log.LogInformation($"The provided invitation code \"{invitationCode}\" is invalid.");
-                    return GetValidationErrorApiResponse("UserInvitationRedemptionFailed-Invalid", "The invitation code you provided is invalid.");
+                    return ApiConnectorHelper.GetValidationErrorApiResponse("UserInvitationRedemptionFailed-Invalid", "The invitation code you provided is invalid.");
                 }
                 else
                 {
@@ -102,7 +99,7 @@ namespace Sample.Functions
                     {
                         // The requested invitation code was not found in persistent storage.
                         log.LogWarning($"User invitation for invitation code \"{invitationCode}\" was not found.");
-                        return GetValidationErrorApiResponse("UserInvitationRedemptionFailed-NotFound", "The invitation code you provided is invalid.");
+                        return ApiConnectorHelper.GetValidationErrorApiResponse("UserInvitationRedemptionFailed-NotFound", "The invitation code you provided is invalid.");
                     }
                     else
                     {
@@ -112,79 +109,15 @@ namespace Sample.Functions
 
                         // TODO: At this point, the blob can be deleted again.
 
-                        return GetContinueApiResponse("UserInvitationRedemptionSucceeded", "The invitation code you provided is valid.", invitationCodeRequest.CompanyId);
+                        return ApiConnectorHelper.GetContinueApiResponse("UserInvitationRedemptionSucceeded", "The invitation code you provided is valid.", invitationCodeRequest.CompanyId);
                     }
                 }
             }
             catch (Exception exc)
             {
                 log.LogError(exc, "Error while processing request body: " + exc.ToString());
-                return GetBlockPageApiResponse("UserInvitationRedemptionFailed-InternalError", "An error occurred while validating your invitation code, please try again later.");
+                return ApiConnectorHelper.GetBlockPageApiResponse("UserInvitationRedemptionFailed-InternalError", "An error occurred while validating your invitation code, please try again later.");
             }
-        }
-
-        [FunctionName(nameof(Debug))]
-        public static async Task<IActionResult> Debug(
-            [HttpTrigger(AuthorizationLevel.Function, WebRequestMethods.Http.Post)] HttpRequest request,
-            IBinder binder,
-            ILogger log)
-        {
-            try
-            {
-                log.LogInformation("A debug request was received.");
-                using (var reader = new StreamReader(request.Body))
-                {
-                    var requestBody = await reader.ReadToEndAsync();
-                    log.LogInformation("Request body:");
-                    log.LogInformation(requestBody);
-                    var requestDocument = JsonDocument.Parse(requestBody);
-                    log.LogInformation("Request properties:");
-                    foreach (var element in requestDocument.RootElement.EnumerateObject())
-                    {
-                        log.LogInformation($"- {element.Name}: {element.Value.GetRawText()}");
-                    }
-                }
-
-                return GetContinueApiResponse("Debug-Succeeded", "Success", null);
-            }
-            catch (Exception exc)
-            {
-                log.LogError(exc, "Error while processing request body: " + exc.ToString());
-                return GetBlockPageApiResponse("Debug-InternalError", "An error occurred while validating your invitation code, please try again later.");
-            }
-        }
-
-        private static IActionResult GetContinueApiResponse(string code, string userMessage, string companyId)
-        {
-            return GetApiResponse("Continue", code, userMessage, 200, companyId);
-        }
-
-        private static IActionResult GetValidationErrorApiResponse(string code, string userMessage)
-        {
-            return GetApiResponse("ValidationError", code, userMessage, 400, null);
-        }
-
-        private static IActionResult GetBlockPageApiResponse(string code, string userMessage)
-        {
-            return GetApiResponse("ShowBlockPage", code, userMessage, 200, null);
-        }
-
-        private static IActionResult GetApiResponse(string action, string code, string userMessage, int statusCode, string companyId)
-        {
-            var responseProperties = new Dictionary<string, object>
-            {
-                { "version", "1.0.0" }, // For both
-                { "status", statusCode }, // For both
-                { "action", action }, // For API Connectors
-                { "code", code }, // For IEF REST profile
-                { "userMessage", userMessage } // For both
-            };
-            if (companyId != null)
-            {
-                // Return a custom user attribute in simplified form (without the Extension ID)
-                responseProperties["extension_CompanyId"] = companyId;
-            }
-            return new JsonResult(responseProperties) { StatusCode = statusCode };
         }
     }
 }
