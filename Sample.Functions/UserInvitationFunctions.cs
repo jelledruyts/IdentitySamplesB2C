@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace Sample.Functions
 {
@@ -94,8 +95,8 @@ namespace Sample.Functions
                 {
                     // An invitation code was found in the request, look up the user invitation in persistent storage.
                     log.LogInformation($"Looking up user invitation for invitation code \"{invitationCode}\"...");
-                    var blobInputStream = binder.Bind<Stream>(new BlobAttribute($"userinvitations/{invitationCode}.json", FileAccess.Read));
-                    if (blobInputStream == null)
+                    var invitationCodeBlob = binder.Bind<ICloudBlob>(new BlobAttribute($"userinvitations/{invitationCode}.json", FileAccess.Read));
+                    if (invitationCodeBlob == null)
                     {
                         // The requested invitation code was not found in persistent storage.
                         log.LogWarning($"User invitation for invitation code \"{invitationCode}\" was not found.");
@@ -105,11 +106,15 @@ namespace Sample.Functions
                     {
                         // The requested invitation code was found in persistent storage, look up the pre-identified information.
                         log.LogInformation($"User invitation found for invitation code \"{invitationCode}\".");
-                        var invitationCodeRequest = await JsonSerializer.DeserializeAsync<InvitationCodeRequest>(blobInputStream);
+                        using (var invitationCodeBlobStream = await invitationCodeBlob.OpenReadAsync(null, null, null))
+                        {
+                            var invitationCodeRequest = await JsonSerializer.DeserializeAsync<InvitationCodeRequest>(invitationCodeBlobStream);
 
-                        // TODO: At this point, the blob can be deleted again.
+                            // At this point, the blob can be deleted again as it was consumed.
+                            await invitationCodeBlob.DeleteAsync();
 
-                        return ApiConnectorHelper.GetContinueApiResponse("UserInvitationRedemptionSucceeded", "The invitation code you provided is valid.", invitationCodeRequest.CompanyId);
+                            return ApiConnectorHelper.GetContinueApiResponse("UserInvitationRedemptionSucceeded", "The invitation code you provided is valid.", invitationCodeRequest.CompanyId);
+                        }
                     }
                 }
             }
