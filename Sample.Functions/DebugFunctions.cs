@@ -14,7 +14,6 @@ namespace Sample.Functions
         [FunctionName(nameof(Debug))]
         public static async Task<IActionResult> Debug(
                    [HttpTrigger(AuthorizationLevel.Function, WebRequestMethods.Http.Post)] HttpRequest request,
-                   IBinder binder,
                    ILogger log)
         {
             try
