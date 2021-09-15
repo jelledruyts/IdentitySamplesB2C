@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
-using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
 
 namespace Sample.Functions
@@ -59,15 +59,10 @@ namespace Sample.Functions
             // This code requires (Application.Read.All + User.Read.All) OR (Directory.Read.All) for the
             // client application calling the Graph API.
             // In production code, the graph client as well as potentially the service principals of resource apps and perhaps
-            // event the user's app roles for each resource app should be cached for optimized performance to avoid additional
+            // even the user's app roles for each resource app should be cached for optimized performance to avoid additional
             // requests for each individual user authentication.
-            var confidentialClientApplication = ConfidentialClientApplicationBuilder
-                .Create(clientId)
-                .WithTenantId(tenantId)
-                .WithClientSecret(clientSecret)
-                .Build();
-            var authProvider = new ClientCredentialProvider(confidentialClientApplication);
-            var graphClient = new GraphServiceClient(authProvider);
+            var clientSecretCredential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+            var graphClient = new GraphServiceClient(clientSecretCredential);
 
             // Get the service principal of the resource app that the user is trying to sign in to.
             // See https://docs.microsoft.com/en-us/graph/api/serviceprincipal-list.
