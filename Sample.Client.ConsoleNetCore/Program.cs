@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -29,9 +27,10 @@ namespace Sample.Client.ConsoleNetCore
                 .AddCommandLine(args)
                 .Build();
             var sampleApiRootUrl = configuration.GetValue<string>("SampleApiRootUrl");
-            var sampleApiScope = configuration.GetValue<string>("AzureAd:Scope");
+            var sampleApiScope = configuration.GetValue<string>("AzureAdB2C:Scope");
+            var b2cAuthority = configuration.GetValue<string>("AzureAdB2C:Authority");
             var confidentialClientApplicationOptions = new ConfidentialClientApplicationOptions();
-            configuration.Bind("AzureAd", confidentialClientApplicationOptions);
+            configuration.Bind("AzureAdB2C", confidentialClientApplicationOptions);
             var scopes = new[] { sampleApiScope }; // The client credentials flow ALWAYS uses the "/.default" scope.
 
             while (true)
@@ -45,7 +44,9 @@ namespace Sample.Client.ConsoleNetCore
                     {
                         // Retrieve an access token to call the back-end Web API using a client secret
                         // representing this application (rather than a user).
-                        var confidentialClientApplication = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(confidentialClientApplicationOptions).Build();
+                        var confidentialClientApplication = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(confidentialClientApplicationOptions)
+                            .WithB2CAuthority(b2cAuthority)
+                            .Build();
                         var token = await confidentialClientApplication.AcquireTokenForClient(scopes).ExecuteAsync();
 
                         // Put the access token on the authorization header by default.
