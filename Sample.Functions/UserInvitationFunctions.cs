@@ -108,7 +108,8 @@ namespace Sample.Functions
                         log.LogInformation($"User invitation found for invitation code \"{invitationCode}\".");
                         using (var invitationCodeBlobStream = await invitationCodeBlob.OpenReadAsync(null, null, null))
                         {
-                            var invitationCodeRequest = await JsonSerializer.DeserializeAsync<InvitationCodeRequest>(invitationCodeBlobStream);
+                            var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                            var invitationCodeRequest = await JsonSerializer.DeserializeAsync<InvitationCodeRequest>(invitationCodeBlobStream, jsonSerializerOptions);
 
                             // At this point, the blob can be deleted again as it was consumed.
                             await invitationCodeBlob.DeleteAsync();

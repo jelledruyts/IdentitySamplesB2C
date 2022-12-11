@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.AzureADB2C.UI;
@@ -15,7 +16,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 
 namespace Sample.Client.AspNetCore.Controllers
 {
@@ -27,6 +27,7 @@ namespace Sample.Client.AspNetCore.Controllers
         private readonly string invitationClientAssertionPolicyId;
         private readonly string invitationCodePolicyId;
         private readonly string userInvitationApiUrl;
+        private readonly JsonSerializerOptions jsonSerializerOptions;
 
         public AccountController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
@@ -35,6 +36,7 @@ namespace Sample.Client.AspNetCore.Controllers
             this.invitationClientAssertionPolicyId = configuration["AzureAdB2C:InvitationClientAssertionPolicyId"];
             this.invitationCodePolicyId = configuration["AzureAdB2C:InvitationCodePolicyId"];
             this.userInvitationApiUrl = configuration["UserInvitationApiUrl"];
+            this.jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         }
 
         public async Task<IActionResult> Identity()
@@ -55,7 +57,7 @@ namespace Sample.Client.AspNetCore.Controllers
 
                     // Deserialize the response into an IdentityInfo instance.
                     var apiIdentityInfoValue = await response.Content.ReadAsStringAsync();
-                    var apiIdentityInfo = JsonConvert.DeserializeObject<IdentityInfo>(apiIdentityInfoValue);
+                    var apiIdentityInfo = JsonSerializer.Deserialize<IdentityInfo>(apiIdentityInfoValue, this.jsonSerializerOptions);
                     relatedApplicationIdentities.Add(apiIdentityInfo);
                 }
             }
@@ -126,13 +128,16 @@ namespace Sample.Client.AspNetCore.Controllers
             {
                 var client = this.httpClientFactory.CreateClient();
                 var invitationCodeRequest = new { CompanyId = companyId };
-                var invitationCodeRequestContent = new StringContent(JsonConvert.SerializeObject(invitationCodeRequest), Encoding.UTF8, "application/json");
+                var invitationCodeRequestContent = new StringContent(JsonSerializer.Serialize(invitationCodeRequest, this.jsonSerializerOptions), Encoding.UTF8, "application/json");
                 var response = await client.PostAsync(this.userInvitationApiUrl, invitationCodeRequestContent);
                 response.EnsureSuccessStatusCode();
 
+                var invitationCode = default(string);
                 var invitationCodeResponseValue = await response.Content.ReadAsStringAsync();
-                dynamic invitationCodeResponse = JsonConvert.DeserializeObject(invitationCodeResponseValue);
-                var invitationCode = (string)invitationCodeResponse?.invitationCode;
+                if (JsonDocument.Parse(invitationCodeResponseValue).RootElement.TryGetProperty("invitationCode", out var invitationCodeProperty))
+                {
+                    invitationCode = invitationCodeProperty.GetString();
+                }
 
                 var authenticationRequestUrl = Url.Action("Register", "Account", null, "https" /* This forces an absolute URL */);
                 var model = new AccountInvitationViewModel
@@ -156,6 +161,7 @@ namespace Sample.Client.AspNetCore.Controllers
             var authenticationProperties = new AuthenticationProperties();
             authenticationProperties.RedirectUri = Url.Action("Registered", "Account");
 
+#pragma warning disable 0618 // AzureADB2CDefaults is obsolete in favor of "Microsoft.Identity.Web"
             if (!string.IsNullOrWhiteSpace(client_assertion))
             {
                 // Use the client assertion flow and pass the client_assertion through.
@@ -168,6 +174,7 @@ namespace Sample.Client.AspNetCore.Controllers
                 authenticationProperties.Items[AzureADB2CDefaults.PolicyKey] = this.invitationCodePolicyId;
             }
             await HttpContext.ChallengeAsync(AzureADB2CDefaults.AuthenticationScheme, authenticationProperties);
+#pragma warning restore 0618
             return new EmptyResult();
         }
 

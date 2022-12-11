@@ -44,6 +44,7 @@ namespace Sample.Client.AspNetCore
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
             // Add Azure AD B2C authentication using OpenID Connect.
+#pragma warning disable 0618 // AzureADB2CDefaults is obsolete in favor of "Microsoft.Identity.Web"
             services.AddAuthentication(AzureADB2CDefaults.AuthenticationScheme)
                 .AddAzureADB2C(options => Configuration.Bind("AzureAdB2C", options));
             services.Configure<OpenIdConnectOptions>(AzureADB2CDefaults.OpenIdScheme, options =>
@@ -145,6 +146,7 @@ namespace Sample.Client.AspNetCore
             {
                 // Optionally set authentication cookie options here.
             });
+#pragma warning restore 0618
 
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddRazorPages();
